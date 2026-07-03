@@ -7,7 +7,6 @@ import {
   MapPin, CreditCard, Receipt, Store,
 } from 'lucide-react';
 import axiosClient from '@/api/apiClient';
-import { useAuth } from '@/context/AuthContext';
 import type { Order, OrderStatus } from '@/types';
 
 // ── Status mapping ───────────────────────────────────
@@ -36,14 +35,11 @@ function formatDate(dateString: string): string {
 }
 
 export default function OrdersPage() {
-  const { isAuthenticated } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-
     const fetchOrders = async () => {
       try {
         const response = await axiosClient.get('/users/orders/my');
@@ -58,22 +54,7 @@ export default function OrdersPage() {
     };
 
     fetchOrders();
-  }, [isAuthenticated]);
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4">
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">يجب تسجيل الدخول</h2>
-          <p className="text-zinc-400 mb-4">يرجى تسجيل الدخول لعرض طلباتك</p>
-          <Link to="/login" className="inline-block px-6 py-2 bg-amber-400 text-zinc-950 rounded-xl font-bold hover:bg-amber-300 transition-colors">
-            تسجيل الدخول
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  }, []);
 
   return (
     <div className="min-h-screen bg-zinc-950 py-8 px-4">

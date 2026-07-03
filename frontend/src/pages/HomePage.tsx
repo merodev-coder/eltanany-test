@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Star, Shield, Tag, Truck, Headphones, RefreshCw, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '@/components/ui-custom/ProductCard';
-import { getHeroSlides, getFeaturedLaptops, getWhyCards, getStats, getTestimonials, subscribeToNewsletter } from '@/services/api';
-import type { Product, HeroSlide, WhyCard, StatItem, Testimonial } from '@/types';
+import { getFeaturedLaptops, getWhyCards, getStats, getTestimonials, subscribeToNewsletter } from '@/services/api';
+import type { Product, WhyCard, StatItem, Testimonial } from '@/types';
 
 
 
@@ -16,8 +16,34 @@ const whyIcons: Record<string, typeof Shield> = {
   refresh: RefreshCw,
 };
 
+const heroSlides = [
+  {
+    id: 1,
+    title: 'لابتوبات احترافية بأفضل الأسعار',
+    subtitle: 'اكتشف تشكيلة واسعة من اللابتوبات من أشهر الماركات العالمية',
+    image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=1920&q=80',
+    link: '/laptops',
+    cta: 'تسوق الآن'
+  },
+  {
+    id: 2,
+    title: 'شحن سريع ومجاني',
+    subtitle: 'توصيل لجميع المحافظات خلال 3-5 أيام عمل',
+    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1920&q=80',
+    link: '/laptops',
+    cta: 'اكتشف المزيد'
+  },
+  {
+    id: 3,
+    title: 'ضمان سنة كاملة',
+    subtitle: 'خدمة ما بعد البيع ودعم فني متاح على مدار الساعة',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1920&q=80',
+    link: '/contact',
+    cta: 'تواصل معنا'
+  }
+];
+
 export default function HomePage() {
-  const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [featured, setFeatured] = useState<Product[]>([]);
   const [whyCards, setWhyCards] = useState<WhyCard[]>([]);
   const [stats, setStats] = useState<StatItem[]>([]);
@@ -32,14 +58,12 @@ export default function HomePage() {
 
   useEffect(() => {
     const load = async () => {
-      const [s, f, w, st, t] = await Promise.all([
-        getHeroSlides(),
+      const [f, w, st, t] = await Promise.all([
         getFeaturedLaptops(),
         getWhyCards(),
         getStats(),
         getTestimonials(),
       ]);
-      setSlides(s);
       setFeatured(f);
       setWhyCards(w);
       setStats(st);
@@ -51,14 +75,14 @@ export default function HomePage() {
   const startAutoPlay = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % slides.length);
+      setCurrentSlide(prev => (prev + 1) % heroSlides.length);
     }, 5500);
-  }, [slides.length]);
+  }, [heroSlides.length]);
 
   useEffect(() => {
-    if (slides.length > 0) startAutoPlay();
+    if (heroSlides.length > 0) startAutoPlay();
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [slides.length]);
+  }, [heroSlides.length]);
 
   useEffect(() => {
     if (testimonials.length === 0) return;
@@ -73,8 +97,8 @@ export default function HomePage() {
     startAutoPlay();
   };
 
-  const nextSlide = () => goToSlide((currentSlide + 1) % slides.length);
-  const prevSlide = () => goToSlide((currentSlide - 1 + slides.length) % slides.length);
+  const nextSlide = () => goToSlide((currentSlide + 1) % heroSlides.length);
+  const prevSlide = () => goToSlide((currentSlide - 1 + heroSlides.length) % heroSlides.length);
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,9 +121,9 @@ export default function HomePage() {
     <div>
       <section className="relative h-[500px] sm:h-[600px] lg:h-[700px] overflow-hidden">
         <AnimatePresence mode="wait">
-          {slides[currentSlide] && (
+          {heroSlides[currentSlide] && (
             <motion.div
-              key={slides[currentSlide].id}
+              key={heroSlides[currentSlide].id}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -108,8 +132,8 @@ export default function HomePage() {
             >
               <div className="absolute inset-0">
                 <img
-                  src={slides[currentSlide].image}
-                  alt={slides[currentSlide].title}
+                  src={heroSlides[currentSlide].image}
+                  alt={heroSlides[currentSlide].title}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-carbon/80 via-carbon/30 to-transparent" />
@@ -122,7 +146,7 @@ export default function HomePage() {
                     transition={{ duration: 0.6, delay: 0.2 }}
                     className="font-heading font-black text-3xl sm:text-4xl lg:text-6xl text-white mb-4"
                   >
-                    {slides[currentSlide].title}
+                    {heroSlides[currentSlide].title}
                   </motion.h1>
                   <motion.p
                     initial={{ opacity: 0, y: 20 }}
@@ -130,7 +154,7 @@ export default function HomePage() {
                     transition={{ duration: 0.6, delay: 0.35 }}
                     className="font-body text-lg sm:text-xl text-white/80 mb-8"
                   >
-                    {slides[currentSlide].subtitle}
+                    {heroSlides[currentSlide].subtitle}
                   </motion.p>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -138,10 +162,10 @@ export default function HomePage() {
                     transition={{ duration: 0.6, delay: 0.5 }}
                   >
                     <Link
-                      to={slides[currentSlide].link}
+                      to={heroSlides[currentSlide].link}
                       className="inline-flex items-center gap-2 px-8 py-4 rounded-xl gradient-brand text-white font-heading font-bold text-lg hover:shadow-glow transition-shadow duration-300"
                     >
-                      {slides[currentSlide].cta}
+                      {heroSlides[currentSlide].cta}
                       <ChevronLeft className="w-5 h-5" />
                     </Link>
                   </motion.div>
@@ -167,7 +191,7 @@ export default function HomePage() {
         </button>
 
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-          {slides.map((_, idx) => (
+          {heroSlides.map((_: any, idx: number) => (
             <button
               key={idx}
               onClick={() => goToSlide(idx)}
