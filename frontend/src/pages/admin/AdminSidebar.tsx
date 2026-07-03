@@ -1,14 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
-import { PlusCircle, Package, Truck, ShoppingBag, BarChart3 } from 'lucide-react';
+import { PlusCircle, Package, ShoppingBag, BarChart3 } from 'lucide-react';
 
-export type AdminTab = 'orders' | 'add-product' | 'inventory' | 'delivery' | 'analytics';
+export type AdminTab = 'orders' | 'add-product' | 'inventory' | 'analytics';
 
 const navItems: { id: AdminTab; label: string; icon: any; path: string }[] = [
   { id: 'orders', label: 'إدارة الطلبات', icon: ShoppingBag, path: '/AhmedEltanany/dashboard/orders' },
   { id: 'add-product', label: 'إضافة منتج', icon: PlusCircle, path: '/AhmedEltanany/dashboard/add-product' },
   { id: 'inventory', label: 'الجرد والإحصائيات', icon: Package, path: '/AhmedEltanany/dashboard/inventory' },
   { id: 'analytics', label: 'التحليلات والأرباح', icon: BarChart3, path: '/AhmedEltanany/dashboard/analytics' },
-  { id: 'delivery', label: 'خيارات التوصيل', icon: Truck, path: '/AhmedEltanany/dashboard/delivery' },
 ];
 
 export default function AdminSidebar() {

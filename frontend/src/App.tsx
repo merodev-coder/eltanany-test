@@ -61,7 +61,6 @@ const OrdersManagement = safeLazy(() => import('@/pages/admin/OrdersManagement')
 const AddProductView = safeLazy(() => import('@/pages/admin/AddProductView'));
 const InventoryView = safeLazy(() => import('@/pages/admin/InventoryView'));
 const AnalyticsDashboard = safeLazy(() => import('@/pages/admin/AnalyticsDashboard'));
-const DeliveryOptionsView = safeLazy(() => import('@/pages/admin/DeliveryOptionsView'));
 
 // Removed PriceListManagement and PriceListPage — price list feature removed entirely
 
@@ -148,8 +147,6 @@ function App() {
                 <Route path="add-product" element={<AddProductView />} />
                 <Route path="inventory" element={<InventoryView />} />
                 <Route path="analytics" element={<AnalyticsDashboard />} />
-                <Route path="delivery" element={<DeliveryOptionsView />} />
-                {/* Price-list removed */}
                 <Route index element={<OrdersManagement />} />
               </Route>
             </Routes>
