@@ -54,7 +54,9 @@
       "Bash(python3 *)",
       "Bash(del *)",
       "Bash(echo \"Exit: $?\")",
-      "Bash(npx prod-safe-bundle *)"
+      "Bash(npx prod-safe-bundle *)",
+      "Bash(node dist/config/env.js)",
+      "Bash(echo \"---EXIT--- $?\")"
     ]
   }
 }

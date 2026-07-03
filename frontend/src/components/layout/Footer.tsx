@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail, Instagram, Facebook, MessageCircle } from 'lucide-react';
+import { CONTACT_INFO } from '@/config/constants';
 
 export default function Footer() {
   return (
@@ -21,7 +22,7 @@ export default function Footer() {
               <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-white/10 hover:bg-ignition-start transition-colors duration-200">
                 <Facebook className="w-4 h-4" />
               </a>
-              <a href="https://wa.me/201000000000" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-white/10 hover:bg-green-500 transition-colors duration-200">
+              <a href={CONTACT_INFO.WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-white/10 hover:bg-green-500 transition-colors duration-200">
                 <MessageCircle className="w-4 h-4" />
               </a>
             </div>
@@ -74,7 +75,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-ignition-start flex-shrink-0" />
-                <span className="text-white/60 font-body text-sm" dir="ltr">+20 100 000 0000</span>
+                <span className="text-white/60 font-body text-sm" dir="ltr">+20 {CONTACT_INFO.WHATSAPP_NUMBER}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-ignition-start flex-shrink-0" />

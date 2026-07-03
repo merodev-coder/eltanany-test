@@ -80,7 +80,8 @@ export const createOrder = catchAsync(async (req: Request, res: Response, next: 
   }
 
   const safeSubtotal = Number(subtotal ?? calculatedSubtotal);
-  const safeShipping = Number(shippingCost ?? 0);
+  // Enforce flat shipping rate of 150 EGP for all shipping orders
+  const safeShipping = deliveryType === 'shipping' ? 150 : Number(shippingCost ?? 0);
   const totalAmount = safeSubtotal + safeShipping;
   const totalRevenue = safeSubtotal;
   const netProfit = totalRevenue - totalCost;

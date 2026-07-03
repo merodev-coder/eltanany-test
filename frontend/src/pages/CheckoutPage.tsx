@@ -1,5 +1,5 @@
 // frontend/src/pages/CheckoutPage.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -23,14 +23,9 @@ import {
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
-import { getGovernorates } from '@/services/api';
 import axiosClient from '@/api/apiClient';
-import type { Governorate } from '@/types';
 import { UploadButton } from '@/components/ui/uploadthing';
-
-// ── Hardcoded payment details (edit these directly) ────────────────────────
-const HARDCODED_VODAFONE_NUMBER = '01000000000';
-const HARDCODED_INSTAPAY_ACCOUNT = '@eltanany_store';
+import { CONTACT_INFO, SHIPPING_CONFIG, EGYPT_GOVERNORATES } from '@/config/constants';
 
 // ── Steps ──────────────────────────────────────────────────────────────────
 const STEPS = [
@@ -47,8 +42,6 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [governorates, setGovernorates] = useState<Governorate[]>([]);
-  const [settingsLoading, setSettingsLoading] = useState(true);
 
   // Step 1: Customer Info
   const [customerInfo, setCustomerInfo] = useState({
@@ -65,26 +58,9 @@ export default function CheckoutPage() {
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
 
-  // Fetch governorates on mount (no settings fetch needed anymore)
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const govs = await getGovernorates();
-        setGovernorates(govs);
-      } catch (err) {
-        console.warn('Failed to load governorates:', err);
-      } finally {
-        setSettingsLoading(false);
-      }
-    };
-    load();
-  }, []);
 
-  // Calculate shipping cost
-  const shippingCost =
-    deliveryType === 'pickup'
-      ? 0
-      : governorates.find((g) => g._id === selectedGovernorate)?.shippingFee || 0;
+  // Calculate shipping cost - flat rate for all Egypt
+  const shippingCost = deliveryType === 'pickup' ? 0 : SHIPPING_CONFIG.FLAT_RATE_EGYPT;
 
   const finalTotal = totalPrice + shippingCost;
 
@@ -352,7 +328,7 @@ export default function CheckoutPage() {
                           <span className="font-heading font-bold text-ink">شحن للمحافظة</span>
                         </div>
                         <p className="text-sm font-body text-slate">
-                          توصيل لباب البيت مع رسوم شحن حسب المحافظة
+                          توصيل {SHIPPING_CONFIG.SHIPPING_TEXT} — {SHIPPING_CONFIG.FLAT_RATE_EGYPT} ج.م
                         </p>
                       </button>
 
@@ -390,22 +366,18 @@ export default function CheckoutPage() {
                             <label className="block text-sm font-body text-slate mb-1.5">
                               المحافظة <span className="text-error">*</span>
                             </label>
-                            {settingsLoading ? (
-                              <div className="h-12 rounded-xl bg-steel-light animate-pulse" />
-                            ) : (
-                              <select
-                                value={selectedGovernorate}
-                                onChange={(e) => setSelectedGovernorate(e.target.value)}
-                                className="w-full h-12 px-4 rounded-xl bg-steel-light border border-transparent focus:border-ignition-start focus:bg-white transition-colors outline-none font-body text-ink"
-                              >
-                                <option value="">اختر المحافظة</option>
-                                {governorates.map((g) => (
-                                  <option key={g._id} value={g._id}>
-                                    {g.name} — {g.shippingFee.toLocaleString()} ج.م
-                                  </option>
-                                ))}
-                              </select>
-                            )}
+                            <select
+                              value={selectedGovernorate}
+                              onChange={(e) => setSelectedGovernorate(e.target.value)}
+                              className="w-full h-12 px-4 rounded-xl bg-steel-light border border-transparent focus:border-ignition-start focus:bg-white transition-colors outline-none font-body text-ink"
+                            >
+                              <option value="">اختر المحافظة</option>
+                              {EGYPT_GOVERNORATES.map((gov) => (
+                                <option key={gov} value={gov}>
+                                  {gov}
+                                </option>
+                              ))}
+                            </select>
                           </div>
                         </motion.div>
                       )}
@@ -458,7 +430,7 @@ export default function CheckoutPage() {
                               رقم Vodafone Cash للتحويل:
                             </p>
                             <p className="font-heading font-bold text-ink text-lg" dir="ltr">
-                              {HARDCODED_VODAFONE_NUMBER}
+                              {CONTACT_INFO.VODAFONE_CASH_NUMBER}
                             </p>
                           </div>
                         )}
@@ -468,7 +440,7 @@ export default function CheckoutPage() {
                               عنوان InstaPay للتحويل:
                             </p>
                             <p className="font-heading font-bold text-ink text-lg" dir="ltr">
-                              {HARDCODED_INSTAPAY_ACCOUNT}
+                              {CONTACT_INFO.INSTAPAY_ACCOUNT}
                             </p>
                           </div>
                         )}
@@ -535,7 +507,7 @@ export default function CheckoutPage() {
                             >
                               <X className="w-4 h-4" />
                             </button>
-                          </div>
+                          </motion.div>
                         )}
                       </div>
                     </div>
@@ -598,7 +570,7 @@ export default function CheckoutPage() {
                         <div className="flex items-center gap-2">
                           <Truck className="w-4 h-4 text-slate" />
                           <span className="font-body text-sm text-ink">
-                            {governorates.find((g) => g._id === selectedGovernorate)?.name}
+                            {selectedGovernorate}
                           </span>
                         </div>
                       )}
