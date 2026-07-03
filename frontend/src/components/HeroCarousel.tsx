@@ -9,7 +9,7 @@ const slides = [
     highlighted: 'وبنصف السعر',
     subtitle: 'لابتوبات استيراد كسر زيرو خالية من الخدوش، تم فحصها بأعلى معايير الجودة لتوفر لك الأداء الأقوى وبأفضل قيمة.',
     cta: 'تصفح الأجهزة المتاحة 💻',
-    image: '/images/hero-1.png',
+    image: './public/images/hero-1.png',
     link: '/laptops'
   },
   {
@@ -19,7 +19,7 @@ const slides = [
     highlighted: 'المهام الثقيلة',
     subtitle: 'أجهزة Workstation ومواصفات خارقة مخصصة للمبرمجين، مصممي الجرافيك، وصنّاع المحتوى. جاهزة للعمل الشاق فوراً.',
     cta: 'تسوق أجهزة العمل الشاق ⚙️',
-    image: '/images/hero-2.png',
+    image: './public/images/hero-2.png',
     link: '/laptops'
   },
   {
@@ -29,7 +29,7 @@ const slides = [
     highlighted: 'لابتوبات الجيمنج',
     subtitle: 'أقوى كروت الشاشة ومعالجات الجيل الحديث بأسعار لا تقبل المنافسة. استمتع بأعلى فريمات بأقل تكلفة ممكنة.',
     cta: 'اكتشف وحوش الجيمنج 🕹️',
-    image: '/images/hero-3.png',
+    image: './public/images/hero-3.png',
     link: '/laptops'
   }
 ];
