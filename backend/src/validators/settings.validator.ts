@@ -2,11 +2,9 @@
 import { z } from 'zod';
 
 // ── Admin: GET /payment ────────────────────────────────────────────────────
-// GET has no body, but the route is wrapped for consistent attach point.
 export const getPaymentSettingsSchema = z.object({});
 
 // ── Admin: POST /payment ───────────────────────────────────────────────────
-// Explicit field mapping — only these two fields are accepted, no passthrough.
 export const updatePaymentSettingsSchema = z.object({
   body: z.object({
     vodafoneCashNumber: z
@@ -22,14 +20,20 @@ export const updatePaymentSettingsSchema = z.object({
   }),
 });
 
-// ── Admin: POST /price-list ───────────────────────────────────────────────
+// ── Admin: POST /price-list ────────────────────────────────────────────────
+// Client sends { fileName, htmlContent } as JSON (mammoth ran in-browser).
 export const updatePriceListSchema = z.object({
   body: z.object({
-    url: z.string().url('أدخل رابط صالح').max(500, 'الرابط طويل جداً'),
-    fileName: z.string().min(1, 'اسم الملف مطلوب').max(200, 'اسم الملف طويل جداً'),
+    fileName: z
+      .string()
+      .min(1, 'اسم الملف مطلوب')
+      .max(200, 'اسم الملف طويل جداً'),
+    htmlContent: z
+      .string()
+      .min(1, 'محتوى القائمة مطلوب'),
   }),
 });
 
-// ── Admin: DELETE /price-list ────────────────────────────────────────────
-// No body — the action unconditionally clears the price-list fields.
+// ── Admin: DELETE /price-list ─────────────────────────────────────────────
+// No body — unconditionally clears the price-list.
 export const clearPriceListSchema = z.object({});

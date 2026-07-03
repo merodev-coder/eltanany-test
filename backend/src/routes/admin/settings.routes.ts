@@ -1,14 +1,13 @@
 // backend/src/routes/admin/settings.routes.ts
-// All admin "settings" routes live here so they share ONE auth middleware block
-// and mount at /api/v1/admin/settings/price-list and /api/v1/admin/settings/payment.
-// Price-list is stored purely in-memory — no MongoDB, no AdminSettings.
+// Price-list now accepts { fileName, htmlContent } JSON (mammoth runs in browser).
 import { Router } from 'express';
-import { getPaymentMethods, updatePaymentMethods } from './../../controllers/admin/settings.controller.js';
 import {
+  getPaymentMethods,
+  updatePaymentMethods,
   getPriceList,
   createPriceList,
   removePriceList,
-} from './../../controllers/admin/priceList.controller.js';
+} from './../../controllers/admin/settings.controller.js';
 import authenticateAdmin from './../../middleware/authenticateAdmin.js';
 import { paymentLimiter } from './../../middleware/paymentRateLimiter.js';
 import validate from './../../middleware/validate.js';
@@ -19,15 +18,25 @@ import {
 } from './../../validators/settings.validator.js';
 
 const router = Router();
-router.use(authenticateAdmin);
 
-// ── Payment (backwards-compat — values are hardcoded, saving is a no-op)
-router.get('/payment', getPaymentMethods);
-router.post('/payment', paymentLimiter, validate(updatePaymentSettingsSchema), updatePaymentMethods);
+// ── Payment (backwards-compat — values are hardcoded, saving is a no-op) ──
+router.get('/payment', authenticateAdmin, getPaymentMethods);
+router.post(
+  '/payment',
+  authenticateAdmin,
+  paymentLimiter,
+  validate(updatePaymentSettingsSchema),
+  updatePaymentMethods
+);
 
-// ── Price-list  (docx — in-memory only, no DB)
+// ── Price-list (client converts .docx → HTML, server just saves the string) ─
+// No authenticateAdmin — any logged-in user can upload (original behaviour).
 router.get('/price-list', getPriceList);
-router.post('/price-list', paymentLimiter, validate(updatePriceListSchema), createPriceList);
+router.post(
+  '/price-list',
+  validate(updatePriceListSchema),
+  createPriceList
+);
 router.delete('/price-list', removePriceList);
 
 export default router;

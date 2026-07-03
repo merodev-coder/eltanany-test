@@ -1,47 +1,55 @@
 // backend/src/controllers/admin/priceList.controller.ts
-// MongoDB-backed singleton price-list.
-// The admin uploads via UploadThing; we store the file URL + filename
-// so the public page can fetch the binary and render it inline.
+// Accepts { fileName, htmlContent } from the client (mammoth runs in the browser),
+// then atomically upserts the singleton PriceList document.
 
 import { Request, Response, NextFunction } from 'express';
 import catchAsync from '../../utils/catchAsync.js';
+import AppError from '../../utils/AppError.js';
 import PriceList from '../../models/admin/PriceList.model.js';
 
-// ── GET /admin/settings/price-list ─────────────────────────
+// ── GET /api/v1/admin/price-list ──────────────────────────
 export const getPriceList = catchAsync(
-async (_req: Request, res: Response) => {
-const doc = await PriceList.findOne().sort({ createdAt: -1 }).lean();
-res.json({ success: true, data: doc });
-}
+  async (_req: Request, res: Response) => {
+    const doc = await PriceList.findOne().sort({ createdAt: -1 }).lean();
+    res.status(200).json({
+      success: true,
+      data: doc
+        ? { fileName: doc.fileName, htmlContent: doc.htmlContent }
+        : null,
+    });
+  }
 );
 
-// ── POST /admin/settings/price-list ─────────────────────────
-// Upserts the singleton with { url, fileName } from the UploadThing callback.
+// ── POST /api/v1/admin/price-list ──────────────────────────
+// Client sends { fileName, htmlContent } as JSON (mammoth ran in-browser).
 export const createPriceList = catchAsync(
-async (req: Request, res: Response, next: NextFunction) => {
-const { url, fileName } = req.body;
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { fileName, htmlContent } = req.body as {
+      fileName?: string;
+      htmlContent?: string;
+    };
 
-if (!url?.trim() || !fileName?.trim()) {
-return next(new Error('URL and fileName required'));
-}
+    if (!fileName?.trim() || !htmlContent?.trim()) {
+      return next(new AppError('اسم الملف ومحتواه مطلوبان', 400));
+    }
 
-const doc = await (PriceList as any).upsertSingleton({
-url: url.trim(),
-fileName: fileName.trim(),
-});
+    const doc = await PriceList.upsertSingleton({
+      fileName: fileName.trim(),
+      htmlContent: htmlContent.trim(),
+    });
 
-res.status(200).json({
-success: true,
-message: 'قائمة الأسعار تم حفظها بنجاح',
-data: doc,
-});
-}
+    res.status(200).json({
+      success: true,
+      message: 'تم حفظ قائمة الأسعار بنجاح',
+      data: { fileName: doc.fileName, htmlContent: doc.htmlContent },
+    });
+  }
 );
 
-// ── DELETE /admin/settings/price-list ───────────────────────
+// ── DELETE /api/v1/admin/price-list ────────────────────────
 export const removePriceList = catchAsync(
-async (_req: Request, res: Response) => {
-await PriceList.deleteMany({});
-res.json({ success: true, data: null });
-}
+  async (_req: Request, res: Response) => {
+    await PriceList.deleteMany({});
+    res.status(200).json({ success: true, data: null });
+  }
 );

@@ -14,6 +14,11 @@ const adminSettingsSchema = new adminMongoose.Schema({
     vodafoneCash: { type: String, default: '' },
     instaPay: { type: String, default: '' },
   },
+  priceList: {
+    url: { type: String, default: '' },
+    fileName: { type: String, default: '' },
+    uploadedAt: { type: Date },
+  },
 }, { timestamps: true });
 
 // ── In-memory cache ──────────────────────────────────────────
@@ -30,6 +35,11 @@ interface DocType extends Document {
   taxRate: number;
   shippingFee: number;
   paymentMethods: { vodafoneCash: string; instaPay: string; };
+  priceList?: {
+    url: string;
+    fileName: string;
+    uploadedAt?: Date;
+  };
   getOrCreate(): Promise<DocType>;
   invalidateCache(): void;
 }

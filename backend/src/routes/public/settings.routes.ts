@@ -1,16 +1,14 @@
 // backend/src/routes/public/settings.routes.ts
 // Public endpoints — no authentication required.
-// Reads payment info from hardcoded constants and price-list from in-memory store.
 
 import { Router } from 'express';
-import { getPriceListSnapshot } from '../../controllers/admin/priceList.controller.js';
+import catchAsync from '../../utils/catchAsync.js';
+import PriceList from '../../models/admin/PriceList.model.js';
+import { Request, Response } from 'express';
 
 const router = Router();
 
-// Hardcoded payment details (matches frontend CheckoutPage.tsx)
-// To change: edit the same constants in:
-//   - backend/src/controllers/admin/settings.controller.ts
-//   - frontend/src/pages/CheckoutPage.tsx
+// Hardcoded payment details (same as CheckoutPage)
 const PAYMENT_INFO = {
   vodafoneCashNumber: '01000000000',
   instaPayAccount: '@eltanany',
@@ -18,16 +16,26 @@ const PAYMENT_INFO = {
 
 // GET /api/v1/public/settings
 router.get('/', (_req, res) => {
-  res.json({ success: true, data: PAYMENT_INFO });
+  res.status(200).json({ success: true, data: PAYMENT_INFO });
 });
 
 // GET /api/v1/public/settings/price-list
-// Returns the in-memory price list URL (no DB hit).
-// The admin uploads a .docx via UploadThing, which stores the file in
-// UploadThing's cloud storage; the URL is then POSTed to the admin
-// price-list endpoint and held in a module-level variable.
-router.get('/price-list', (_req, res) => {
-  res.json({ success: true, data: getPriceListSnapshot() });
-});
+// Mirrors GET /api/v1/public/price-list — both serve the same MongoDB data.
+router.get(
+  '/price-list',
+  catchAsync(async (_req, res) => {
+    const doc = await PriceList.findOne().sort({ createdAt: -1 }).lean();
+    if (!doc) {
+      return res.status(200).json({ success: true, data: null });
+    }
+    res.status(200).json({
+      success: true,
+      data: {
+        fileName: doc.fileName,
+        htmlContent: doc.htmlContent,
+      },
+    });
+  })
+);
 
 export default router;

@@ -1,5 +1,4 @@
-// frontend/src/pages/ProfilePage.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
@@ -14,12 +13,14 @@ import {
   FileText,
   Upload,
   CheckCircle,
+  X,
 } from 'lucide-react';
 import axiosClient from '@/api/apiClient';
-import { UploadButton } from '@/components/ui/uploadthing';
 import { toast } from 'sonner';
 
-// Types
+// ── Client-side .docx → HTML (mammoth is installed in the frontend) ─
+import mammoth from 'mammoth';
+
 interface Order {
   _id: string;
   status: string;
@@ -28,7 +29,6 @@ interface Order {
   createdAt: string;
 }
 
-// Default admin email — only this user sees the .docx upload box
 const DEFAULT_ADMIN_EMAIL = 'admin@eltanany.com';
 
 function StatusBadge({ status }: { status: string }) {
@@ -47,6 +47,23 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+/** Convert .docx → HTML in the browser, then POST the HTML string. */
+async function uploadPriceList(file: File): Promise<{ fileName: string; htmlContent: string }> {
+  // 1) Read the file into an ArrayBuffer
+  const arrayBuffer = await file.arrayBuffer();
+
+  // 2) Convert to HTML client-side — mammoth is synchronous from the TS side
+  const result = await mammoth.convertToHtml({ arrayBuffer });
+  const html = result.value;
+
+  // 3) POST only the tiny HTML payload (no file upload)
+  const res = await axiosClient.post('/admin/settings/price-list', {
+    fileName: file.name,
+    htmlContent: html,
+  });
+  return res.data.data;
+}
+
 export default function ProfilePage() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -55,11 +72,16 @@ export default function ProfilePage() {
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [saving, setSaving] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<{ url: string; name: string } | null>(null);
+
+  // Price list upload state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isDefaultAdmin = user?.email === DEFAULT_ADMIN_EMAIL;
 
+  // ── Orders ──────────────────────────────────────────────
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -74,6 +96,7 @@ export default function ProfilePage() {
     fetchOrders();
   }, []);
 
+  // ── Profile edits ───────────────────────────────────────
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -87,27 +110,32 @@ export default function ProfilePage() {
     }
   };
 
-  const handleUploadComplete = async (res: Array<{ url: string; name: string }>) => {
-  if (res?.[0]?.url && res?.[0]?.name) {
-    const fileUrl = res[0].url;
-    const fileName = res[0].name;
-    setUploadedFile({ url: fileUrl, name: fileName });
-    toast.success('تم رفع الملف بنجاح!');
-    try {
-      await axiosClient.post('/admin/settings/price-list', { url: fileUrl, fileName });
-      toast.success('تم حفظ قائمة الأسعار بنجاح');
-    } catch {
-      toast.error('تم الرفع لكن فشل حفظ البيانات — حاول مرة أخرى');
-    }
-  } else {
-    toast.error('حدث خطأ أثناء معالجة الملف');
-  }
-  setIsUploading(false);
-};
+  // ── Price-list upload ───────────────────────────────────
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedFile(e.target.files?.[0] ?? null);
+  };
 
-  const handleUploadError = (error: Error) => {
-    toast.error('فشل الرفع: ' + error.message);
-    setIsUploading(false);
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+    setIsUploading(true);
+    try {
+      // Guard: docx is a ZIP — quick header check before sending
+      const header = new Uint8Array(await selectedFile.slice(0, 4).arrayBuffer());
+      if (header[0] !== 0x50 || header[1] !== 0x4b) {
+        toast.error('صيغة الملف غير مدعومة — يرجى اختيار ملف .docx');
+        return;
+      }
+
+      const data = await uploadPriceList(selectedFile);
+      setFileName(data.fileName);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      toast.success('تم تحويل الملف وحفظ قائمة الأسعار بنجاح');
+    } catch (err: any) {
+      toast.error(err?.message || 'فشل حفظ قائمة الأسعار');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   if (!user) return null;
@@ -120,7 +148,7 @@ export default function ProfilePage() {
         <h1 className="text-2xl font-bold text-white mb-8">حسابي</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Identity Card */}
+          {/* ── Identity Card ────────────────────────── */}
           <div className="md:col-span-1">
             <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6">
               <div className="flex items-center gap-4 mb-6">
@@ -141,7 +169,7 @@ export default function ProfilePage() {
                 {user.phone && (
                   <div className="flex items-center gap-2 text-zinc-300">
                     <Phone className="w-4 h-4 text-zinc-500" />
-                    <span>{user.phone}</span>
+                    <span dir="ltr">{user.phone}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-zinc-300">
@@ -151,11 +179,7 @@ export default function ProfilePage() {
               </div>
 
               <button
-                onClick={() => {
-                  setEditing(!editing);
-                  setEditName(user.name);
-                  setEditPhone(user.phone || '');
-                }}
+                onClick={() => { setEditing(!editing); setEditName(user.name); setEditPhone(user.phone || ''); }}
                 className="mt-6 w-full h-10 rounded-lg border border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-center gap-2"
               >
                 <Edit3 className="w-4 h-4" />
@@ -164,9 +188,10 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Right Column */}
+          {/* ── Right Column ─────────────────────────── */}
           <div className="md:col-span-2 space-y-6">
-            {/* Edit Form */}
+
+            {/* ── Edit Form ─────────────────────────── */}
             {editing && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -200,7 +225,8 @@ export default function ProfilePage() {
                       disabled={saving}
                       className="flex-1 h-10 rounded-lg bg-amber-400 text-zinc-950 font-bold hover:bg-amber-300 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'حفظ'}
+                      {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                      حفظ
                     </button>
                     <button
                       onClick={() => setEditing(false)}
@@ -213,67 +239,61 @@ export default function ProfilePage() {
               </motion.div>
             )}
 
-            {/* Admin-only .docx upload box */}
+            {/* ── Price List Upload (admin only) ────── */}
             {isDefaultAdmin && (
               <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <FileText className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-lg font-bold text-white">رفع ملف .docx</h3>
+                  <h3 className="text-lg font-bold text-white">رفع قائمة الأسعار</h3>
                 </div>
                 <p className="text-zinc-400 text-sm mb-4">
-                  ارفع ملف Word (.docx) هنا 
+                  ارفع ملف Word (.docx) — سيتم فحصه وتحويله في المتصفح ثم حفظ المحتوى
                 </p>
 
-                {uploadedFile && (
+                {fileName && !isUploading && (
                   <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <CheckCircle className="w-5 h-5 text-green-400" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-green-400 font-medium truncate">{uploadedFile.name}</p>
-                      <a
-                        href={uploadedFile.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-green-400/70 hover:text-green-400 underline"
-                      >
-                        فتح الرابط
-                      </a>
-                    </div>
+                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                    <span className="text-sm text-green-400 font-medium truncate">{fileName}</span>
+                    <span className="text-xs text-green-400/60 mr-auto">تم الحفظ</span>
                   </div>
                 )}
 
-                <UploadButton
-                  endpoint="docxUploader"
-                  onClientUploadComplete={handleUploadComplete}
-                  onUploadError={handleUploadError}
-                  onUploadBegin={() => setIsUploading(true)}
-                  appearance={{
-                    button: 'w-full h-32 rounded-xl border-2 border-dashed border-zinc-700 hover:border-amber-400 transition-colors flex flex-col items-center justify-center gap-2 bg-transparent text-zinc-400',
-                    allowedContent: 'text-xs text-zinc-600',
-                  }}
-                  content={{
-                    button({ isUploading }: { isUploading: boolean }) {
-                      if (isUploading) {
-                        return (
-                          <div className="flex flex-col items-center gap-2">
-                            <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
-                            <span className="text-sm">جاري الرفع…</span>
-                          </div>
-                        );
-                      }
-                      return (
-                        <div className="flex flex-col items-center gap-2">
-                          <Upload className="w-8 h-8" />
-                          <span className="text-sm font-medium">اضغط لرفع ملف .docx</span>
-                          <span className="text-xs text-zinc-600">حد أقصى 16 ميجابايت</span>
-                        </div>
-                      );
-                    },
-                  }}
-                />
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={handleFileSelect}
+                    disabled={isUploading}
+                    className="flex-1 h-10 px-4 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-amber-400 file:text-zinc-950 file:text-sm file:font-bold file:cursor-pointer cursor-pointer disabled:opacity-50"
+                  />
+                  <button
+                    onClick={handleUpload}
+                    disabled={!selectedFile || isUploading}
+                    className="h-10 px-6 rounded-lg bg-amber-400 text-zinc-950 font-bold hover:bg-amber-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
+                  >
+                    {isUploading ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> جاري الحفظ…</>
+                    ) : (
+                      <><Upload className="w-4 h-4" /> رفع</>
+                    )}
+                  </button>
+                </div>
+                {selectedFile && !isUploading && (
+                  <button
+                    onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                    className="mt-2 text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1"
+                  >
+                    <X className="w-3 h-3" /> إزالة
+                  </button>
+                )}
+                <p className="mt-2 text-xs text-zinc-600">
+                  💡 التحويل يحدث في المتصفح — لا يتم رفع الملف الأصلي إلى أي خادم
+                </p>
               </div>
             )}
 
-            {/* Change Password */}
+            {/* ── Change Password ──────────────────── */}
             <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Lock className="w-5 h-5 text-amber-400" />
@@ -290,7 +310,7 @@ export default function ProfilePage() {
               </Link>
             </div>
 
-            {/* Recent Orders */}
+            {/* ── Recent Orders ────────────────────── */}
             <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -315,9 +335,7 @@ export default function ProfilePage() {
                     >
                       <div>
                         <p className="text-white font-medium">#{order._id.slice(-6)}</p>
-                        <p className="text-zinc-400 text-sm">
-                          {order.items.length} منتج
-                        </p>
+                        <p className="text-zinc-400 text-sm">{order.items.length} منتج</p>
                       </div>
                       <div className="text-left">
                         <StatusBadge status={order.status} />

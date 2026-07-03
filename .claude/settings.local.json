@@ -53,7 +53,8 @@
       "Bash(npm install *)",
       "Bash(python3 *)",
       "Bash(del *)",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(echo \"Exit: $?\")",
+      "Bash(npx prod-safe-bundle *)"
     ]
   }
 }

@@ -1,5 +1,4 @@
-// frontend/src/pages/PriceListPage.tsx
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   FileText,
   Loader2,
@@ -8,11 +7,11 @@ import {
 } from "lucide-react";
 import axiosClient from "@/api/apiClient";
 import { Link } from "react-router-dom";
-import { renderAsync } from "docx-preview";
+import { motion } from "framer-motion";
 
 interface PriceListData {
-  url: string;
   fileName: string;
+  htmlContent: string;
   uploadedAt: string | null;
 }
 
@@ -20,94 +19,48 @@ export default function PriceListPage() {
   const [data, setData] = useState<PriceListData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // ── Fetch price-list metadata ──────────────────────────────────
-  useEffect(() => {
-    const fetchMeta = async () => {
-      try {
-        const res = await axiosClient.get("/public/price-list");
-        if (res.data.success) setData(res.data.data ?? null);
-        else setError(true);
-      } catch {
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMeta();
+  // ── Fetch ─────────────────────────────────────────────────
+  const fetchPriceList = useCallback(async () => {
+    try {
+      const res = await axiosClient.get("/public/price-list");
+      if (res.data.success) setData(res.data.data);
+      else setError(true);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  // ── Render the .docx into the container ───────────────────────
-  const renderDocx = useCallback(async () => {
-    if (!data?.url || !containerRef.current) return;
-
-    setPreviewLoading(true);
-    setPreviewError(null);
-    containerRef.current!.innerHTML = "";
-
-    try {
-      const res = await fetch(data.url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const buf = await res.arrayBuffer();
-      if (!buf || buf.byteLength === 0)
-        throw new Error("الملف فارغ أو تالف");
-
-      // DOCX is a ZIP — verify the PK signature
-      const hdr = new Uint8Array(buf.slice(0, 4));
-      if (hdr[0] !== 0x50 || hdr[1] !== 0x4b)
-        throw new Error("صيغة الملف غير مدعومة");
-
-      await renderAsync(buf, containerRef.current!, {
-        className: "docx-preview-render",
-        inWrapper: true,
-        ignoreWidth: false,
-        ignoreHeight: false,
-        ignoreFonts: false,
-        ignoreLastRenderedPage: true,
-        experimental: {
-          breakWithoutSpace: false,
-          enableFileSizeDetection: false,
-        },
-      });
-    } catch (err) {
-      setPreviewError(
-        err instanceof Error ? err.message : "حدث خطأ أثناء عرض الملف"
-      );
-    } finally {
-      setPreviewLoading(false);
-    }
-  }, [data?.url]);
-
   useEffect(() => {
-    if (data?.url) renderDocx();
-    return () => {
-      if (containerRef.current) containerRef.current.innerHTML = "";
-    };
-  }, [data?.url, renderDocx]);
+    fetchPriceList();
+  }, [fetchPriceList]);
 
-  // ── Refetch metadata (kept as manual trigger via reload) ──────
-  const handleReload = () => window.location.reload();
+  const handleReload = () => {
+    setRefreshing(true);
+    setLoading(true);
+    setError(false);
+    setData(null);
+    fetchPriceList();
+  };
 
-  // ── Loading ────────────────────────────────────────────────────
+  // ── Loading ──────────────────────────────────────────────
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-ignition-start mx-auto mb-4" />
-          <p className="font-body text-zinc-400 text-lg">
-            جاري تحميل القائمة…
-          </p>
+          <p className="font-body text-zinc-400 text-lg">جاري تحميل القائمة…</p>
         </div>
       </div>
     );
   }
 
-  // ── No data ────────────────────────────────────────────────────
-  if (error || !data?.url) {
+  // ── No content ───────────────────────────────────────────
+  if (error || !data?.htmlContent) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
         <div className="text-center max-w-md">
@@ -122,9 +75,14 @@ export default function PriceListPage() {
           </p>
           <button
             onClick={handleReload}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl gradient-brand text-white font-heading font-bold hover:shadow-glow transition-shadow"
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-ignition-start text-white font-heading font-bold hover:opacity-90 transition-opacity disabled:opacity-40"
           >
-            <RefreshCw className="w-4 h-4" />
+            {refreshing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
             إعادة المحاولة
           </button>
           <div className="mt-4">
@@ -141,9 +99,9 @@ export default function PriceListPage() {
     );
   }
 
-  // ── Preview ────────────────────────────────────────────────────
+  // ── Rendered HTML ─────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-zinc-950" dir="rtl">
       {/* Sticky toolbar */}
       <div className="sticky top-0 z-50 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
@@ -155,70 +113,49 @@ export default function PriceListPage() {
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
-              onClick={() => renderDocx()}
-              disabled={previewLoading}
+              onClick={handleReload}
+              disabled={refreshing}
               className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors disabled:opacity-40"
               title="إعادة تحميل"
             >
-              <RefreshCw
-                className={`w-4 h-4 ${previewLoading ? "animate-spin" : ""}`}
-              />
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
             </button>
-            <a
-              href={data.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ignition-start text-white text-sm font-heading font-bold hover:opacity-90 transition-opacity"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">تنزيل الملف</span>
-            </a>
           </div>
         </div>
       </div>
 
-      {/* Document viewport */}
-      <div className="flex-1 bg-zinc-950 py-6 sm:py-10">
+      {/* Content */}
+      <div className="bg-zinc-950 py-6 sm:py-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-white shadow-2xl rounded-lg overflow-hidden min-h-[60vh]"
+            className="rounded-lg overflow-hidden relative"
           >
-            {/* Preview loading overlay */}
-            {previewLoading && (
-              <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10 rounded-lg">
-                <div className="text-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-ignition-start mx-auto mb-3" />
-                  <p className="font-body text-slate text-sm">
-                    جاري عرض المستند…
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Preview error */}
-            {previewError && (
-              <div className="flex flex-col items-center justify-center py-20 px-4">
-                <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-                <p className="font-body text-red-500 text-center max-w-md">
-                  {previewError}
-                </p>
-                <button
-                  onClick={() => renderDocx()}
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-100 text-ink font-heading font-bold text-sm hover:bg-zinc-200 transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  إعادة المحاولة
-                </button>
-              </div>
-            )}
-
-            {/* Render target */}
+            {/* Render the converted HTML — tables, paragraphs, lists, etc. */}
             <div
-              ref={containerRef}
-              className="docx-preview-target [&_.docx-preview-render]:p-6 sm:[&_.docx-preview-render]:p-10"
+              className="pricelist-html prose prose-lg prose-zinc dark:prose-invert
+                max-w-none
+                prose-headings:text-white prose-headings:font-heading
+                prose-h1:text-2xl prose-h1:font-bold prose-h1:mb-4
+                prose-h2:text-xl prose-h2:font-bold prose-h2:mt-6 prose-h2:mb-3
+                prose-h3:text-lg prose-h3:font-bold prose-h3:mt-4 prose-h3:mb-2
+                prose-p:text-zinc-300 prose-leading-7
+                prose-table:divide-x prose-table:divide-zinc-700
+                prose-thead:bg-zinc-800
+                prose-th:text-white prose-th:font-bold prose-th:px-4 prose-th:py-3
+                prose-td:text-zinc-300 prose-td:px-4 prose-td:py-3
+                prose-tr:border-b prose-tr:border-zinc-800
+                prose-ul:text-zinc-300 prose-ol:text-zinc-300
+                prose-li:marker:text-ignition-start
+                [&_table]:w-full [&_table]:rounded-lg [&_table]:overflow-hidden [&_table]:border [&_table]:border-zinc-800
+                [&_table]:my-6
+                [&_*]:font-body
+                rtl:[&_th]:text-right
+                ltr:[&_th]:text-left
+              "
+              dangerouslySetInnerHTML={{ __html: data.htmlContent }}
             />
           </motion.div>
         </div>

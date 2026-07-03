@@ -3,12 +3,13 @@ import { generateUploadButton, generateUploadDropzone, type UploadDropzoneProps 
 export type { UploadDropzoneProps };
 
 // ── Shared UploadThing API endpoint ────────────────────────────────────────
-const UPLOADTHING_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Use relative URL so requests are proxied through Vite as same-origin,
+// allowing cookies to be sent (required for admin auth middleware)
+const UPLOADTHING_URL = import.meta.env.VITE_UPLOADTHING_URL || "/api/uploadthing";
 
 // ── UploadButton (used in CheckoutPage for small inline triggers) ──────────
 export const UploadButton = generateUploadButton({
-  url: `${UPLOADTHING_URL}/api/uploadthing`,
+  url: UPLOADTHING_URL,
 });
 
 // ── UploadDropzone (large click/drag-drop zone — full surface area) ─────────
@@ -17,7 +18,7 @@ export const UploadButton = generateUploadButton({
 //   - `isUploading`, `isReady`, `isDragOver`, `progress`
 // so we can wire every visual state (idle / uploading / dragging / error).
 export const UploadDropzone = generateUploadDropzone({
-  url: `${UPLOADTHING_URL}/api/uploadthing`,
+  url: UPLOADTHING_URL,
   config: {
     // Image MIME type for product image uploads (server-side validation
     // in uploadthing.ts enforces endpoint constraints; this is a client-side hint)
