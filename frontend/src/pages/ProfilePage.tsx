@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useAuth } from '@/context/AuthContext';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
 import {
   User as UserIcon,
   ShoppingBag,
@@ -12,14 +12,15 @@ import {
   Phone,
   FileText,
   Upload,
-  CheckCircle,
+  CheckCircle2,
   X,
-} from 'lucide-react';
-import axiosClient from '@/api/apiClient';
-import { toast } from 'sonner';
+  FileType2,
+} from "lucide-react";
+import axiosClient from "@/api/apiClient";
+import { toast } from "sonner";
 
 // ── Client-side .docx → HTML (mammoth is installed in the frontend) ─
-import mammoth from 'mammoth';
+import mammoth from "mammoth";
 
 interface Order {
   _id: string;
@@ -29,63 +30,283 @@ interface Order {
   createdAt: string;
 }
 
-const DEFAULT_ADMIN_EMAIL = 'admin@eltanany.com';
+const DEFAULT_ADMIN_EMAIL = "admin@eltanany.com";
 
+// ── Status badge ──────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    pending: 'bg-yellow-500/20 text-yellow-400',
-    confirmed: 'bg-blue-500/20 text-blue-400',
-    processing: 'bg-purple-500/20 text-purple-400',
-    shipped: 'bg-cyan-500/20 text-cyan-400',
-    delivered: 'bg-green-500/20 text-green-400',
-    cancelled: 'bg-red-500/20 text-red-400',
+    pending: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+    confirmed: "bg-blue-500/15 text-blue-400 border-blue-500/20",
+    processing: "bg-purple-500/15 text-purple-400 border-purple-500/20",
+    shipped: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+    delivered: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+    cancelled: "bg-red-500/15 text-red-400 border-red-500/20",
   };
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status] || 'bg-zinc-500/20 text-zinc-400'}`}>
+    <span
+      className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
+        colors[status] || "bg-zinc-500/15 text-zinc-400 border-zinc-500/20"
+      }`}
+    >
       {status}
     </span>
   );
 }
 
 /** Convert .docx → HTML in the browser, then POST the HTML string. */
-async function uploadPriceList(file: File): Promise<{ fileName: string; htmlContent: string }> {
-  // 1) Read the file into an ArrayBuffer
+async function uploadPriceList(
+  file: File
+): Promise<{ fileName: string; htmlContent: string }> {
   const arrayBuffer = await file.arrayBuffer();
-
-  // 2) Convert to HTML client-side — mammoth is synchronous from the TS side
   const result = await mammoth.convertToHtml({ arrayBuffer });
   const html = result.value;
-
-  // 3) POST only the tiny HTML payload (no file upload)
-  const res = await axiosClient.post('/admin/settings/price-list', {
+  const res = await axiosClient.post("/admin/settings/price-list", {
     fileName: file.name,
     htmlContent: html,
   });
   return res.data.data;
 }
 
+// ── Admin Upload Card ──────────────────────────────────────
+function AdminPriceListUpload() {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0); // prevent spurious mouseleave events
+
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSelectedFile(e.target.files?.[0] ?? null);
+    },
+    []
+  );
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.items?.length) setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+      dragCounter.current = 0;
+      const file = e.dataTransfer.files?.[0];
+      if (file) setSelectedFile(file);
+    },
+    []
+  );
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    // Guard: docx is a ZIP — fast header check
+    const header = new Uint8Array(
+      await selectedFile.slice(0, 4).arrayBuffer()
+    );
+    if (header[0] !== 0x50 || header[1] !== 0x4b) {
+      toast.error("صيغة الملف غير مدعومة — يرجى اختيار ملف .docx");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const data = await uploadPriceList(selectedFile);
+      setFileName(data.fileName);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      toast.success("تم تحويل الملف وحفظ قائمة الأسعار بنجاح");
+    } catch (err: any) {
+      toast.error(err?.message || "فشل حفظ قائمة الأسعار");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  return (
+    <div className="bg-zinc-900/80 border border-zinc-800/60 rounded-2xl p-6 backdrop-blur-sm">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+          <FileType2 className="w-5 h-5 text-amber-500" />
+        </div>
+        <div>
+          <h3 className="font-heading font-bold text-white text-base">
+            رفع قائمة الأسعار
+          </h3>
+          <p className="text-zinc-500 text-xs mt-0.5">
+            ارفع ملف Word (.docx) — يتحول تلقائياً في المتصفح
+          </p>
+        </div>
+      </div>
+
+      {/* ── Dropzone / File Input ─────────────────── */}
+      <label
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onClick={() => !selectedFile && fileInputRef.current?.click()}
+        className={`
+          relative block mt-4 rounded-xl border-2 border-dashed
+          transition-all duration-200 ease-out cursor-pointer
+          ${
+            isDragOver
+              ? "border-amber-500/60 bg-[#1c1c21] scale-[1.01]"
+              : "border-zinc-700 bg-[#161619] hover:border-amber-500/40 hover:bg-[#1c1c21]"
+          }
+          ${selectedFile || isUploading ? "opacity-60 pointer-events-none" : ""}
+        `}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          onChange={handleFileSelect}
+          disabled={isUploading}
+          className="hidden"
+        />
+
+        <div className="flex flex-col items-center justify-center gap-3 py-10 px-4 text-center">
+          {/* Upload icon */}
+          <div
+            className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors duration-200 ${
+              isDragOver ? "bg-amber-500/15" : "bg-zinc-800"
+            }`}
+          >
+            {isDragOver ? (
+              <FileText className="w-6 h-6 text-amber-500" />
+            ) : (
+              <Upload className="w-6 h-6 text-zinc-500" />
+            )}
+          </div>
+
+          {/* Text */}
+          <div>
+            <p className="font-body font-semibold text-zinc-300 text-sm">
+              {isDragOver
+                ? "أفلت الملف هنا…"
+                : "اضغط لاختيار ملف أو اسحبه هنا"}
+            </p>
+            <p className="font-body text-zinc-600 text-xs mt-1">
+              صيغة .docx فقط — حد أقصى 16 ميجابايت
+            </p>
+          </div>
+        </div>
+      </label>
+
+      {/* ── Action Bar (shown when file is selected) ── */}
+      <AnimatePresence>
+        {selectedFile && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -4, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="mt-3 pt-3 border-t border-zinc-800/60">
+              <div className="flex items-center justify-between gap-3">
+                {/* File info */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center flex-shrink-0">
+                    <FileType2 className="w-4 h-4 text-amber-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {selectedFile.name}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={clearSelection}
+                    disabled={isUploading}
+                    className="w-9 h-9 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600 transition-colors flex items-center justify-center disabled:opacity-40"
+                    title="إزالة"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleUpload}
+                    disabled={isUploading}
+                    className="h-9 px-5 rounded-lg bg-amber-500 text-black font-bold text-sm hover:bg-amber-400 active:scale-[0.97] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-amber-500/10"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>جاري التحويل…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        <span>رفع وتحويل</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Helper note */}
+      <p className="mt-3 text-[11px] text-zinc-600 leading-relaxed">
+        يتم تحويل المستند في المتصفح — لا يتم إرسال الملف الأصلي إلى الخادم
+      </p>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// Profile Page
+// ══════════════════════════════════════════════════════════
 export default function ProfilePage() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editPhone, setEditPhone] = useState('');
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
   const [saving, setSaving] = useState(false);
-
-  // Price list upload state
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileName, setFileName] = useState<string>('');
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const isDefaultAdmin = user?.email === DEFAULT_ADMIN_EMAIL;
 
   // ── Orders ──────────────────────────────────────────────
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axiosClient.get('/users/orders/my');
+        const res = await axiosClient.get("/users/orders/my");
         setOrders(res.data.data.orders || []);
       } catch {
         setOrders([]);
@@ -100,41 +321,16 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await axiosClient.patch('/users/profile/me', { name: editName, phone: editPhone });
+      await axiosClient.patch("/users/profile/me", {
+        name: editName,
+        phone: editPhone,
+      });
       setEditing(false);
-      toast.success('تم حفظ التعديلات');
+      toast.success("تم حفظ التعديلات");
     } catch {
-      toast.error('فشل حفظ التعديلات');
+      toast.error("فشل حفظ التعديلات");
     } finally {
       setSaving(false);
-    }
-  };
-
-  // ── Price-list upload ───────────────────────────────────
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedFile(e.target.files?.[0] ?? null);
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-    setIsUploading(true);
-    try {
-      // Guard: docx is a ZIP — quick header check before sending
-      const header = new Uint8Array(await selectedFile.slice(0, 4).arrayBuffer());
-      if (header[0] !== 0x50 || header[1] !== 0x4b) {
-        toast.error('صيغة الملف غير مدعومة — يرجى اختيار ملف .docx');
-        return;
-      }
-
-      const data = await uploadPriceList(selectedFile);
-      setFileName(data.fileName);
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      toast.success('تم تحويل الملف وحفظ قائمة الأسعار بنجاح');
-    } catch (err: any) {
-      toast.error(err?.message || 'فشل حفظ قائمة الأسعار');
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -143,44 +339,60 @@ export default function ProfilePage() {
   const recentOrders = orders.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-zinc-950 py-8 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#0b0b0c] py-8 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold text-white mb-8">حسابي</h1>
+        <h1 className="text-2xl font-bold font-heading text-white mb-8">
+          حسابي
+        </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* ── Identity Card ────────────────────────── */}
           <div className="md:col-span-1">
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6">
+            <div className="bg-zinc-900/80 border border-zinc-800/60 rounded-2xl p-6 backdrop-blur-sm">
+              {/* Avatar */}
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-20 h-20 rounded-full bg-amber-400 flex items-center justify-center text-zinc-950 font-bold text-2xl">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500 flex items-center justify-center text-zinc-950 font-bold text-2xl shadow-lg shadow-amber-500/20">
                   {user.name.charAt(0)}
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">{user.name}</h2>
-                  <p className="text-zinc-400 text-sm">{user.email}</p>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold font-heading text-white truncate">
+                    {user.name}
+                  </h2>
+                  <p className="text-zinc-500 text-xs truncate">
+                    {user.email}
+                  </p>
                 </div>
               </div>
 
+              {/* Meta */}
               <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-2 text-zinc-300">
-                  <UserIcon className="w-4 h-4 text-zinc-500" />
-                  <span>{user.email}</span>
+                <div className="flex items-center gap-2.5 text-zinc-400">
+                  <UserIcon className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                  <span className="truncate">{user.email}</span>
                 </div>
                 {user.phone && (
-                  <div className="flex items-center gap-2 text-zinc-300">
-                    <Phone className="w-4 h-4 text-zinc-500" />
+                  <div className="flex items-center gap-2.5 text-zinc-400">
+                    <Phone className="w-4 h-4 text-zinc-600 flex-shrink-0" />
                     <span dir="ltr">{user.phone}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-zinc-300">
-                  <Calendar className="w-4 h-4 text-zinc-500" />
-                  <span>عضو منذ: {new Date(user.createdAt).toLocaleDateString('ar-EG')}</span>
+                <div className="flex items-center gap-2.5 text-zinc-400">
+                  <Calendar className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                  <span>
+                    عضو منذ:{" "}
+                    {new Date(user.createdAt).toLocaleDateString("ar-EG")}
+                  </span>
                 </div>
               </div>
 
+              {/* Edit button */}
               <button
-                onClick={() => { setEditing(!editing); setEditName(user.name); setEditPhone(user.phone || ''); }}
-                className="mt-6 w-full h-10 rounded-lg border border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-center gap-2"
+                onClick={() => {
+                  setEditing(!editing);
+                  setEditName(user.name);
+                  setEditPhone(user.phone || "");
+                }}
+                className="mt-6 w-full h-10 rounded-xl border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all flex items-center justify-center gap-2 text-sm"
               >
                 <Edit3 className="w-4 h-4" />
                 تعديل الملف الشخصي
@@ -196,41 +408,49 @@ export default function ProfilePage() {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6"
+                className="bg-zinc-900/80 border border-zinc-800/60 rounded-2xl p-6 backdrop-blur-sm"
               >
-                <h3 className="text-lg font-bold text-white mb-4">تعديل الملف الشخصي</h3>
+                <h3 className="font-heading font-bold text-white text-base mb-5">
+                  تعديل الملف الشخصي
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm text-zinc-400 mb-1.5">الاسم</label>
+                    <label className="block text-xs font-medium text-zinc-500 mb-1.5 uppercase tracking-wider">
+                      الاسم
+                    </label>
                     <input
                       type="text"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="w-full h-10 px-4 rounded-lg bg-zinc-800 border border-zinc-700 text-white outline-none focus:border-amber-400"
+                      className="w-full h-11 px-4 rounded-xl bg-[#161619] border border-zinc-800 text-white text-sm outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all placeholder:text-zinc-700"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-zinc-400 mb-1.5">رقم الهاتف</label>
+                    <label className="block text-xs font-medium text-zinc-500 mb-1.5 uppercase tracking-wider">
+                      رقم الهاتف
+                    </label>
                     <input
                       type="tel"
                       value={editPhone}
                       onChange={(e) => setEditPhone(e.target.value)}
-                      className="w-full h-10 px-4 rounded-lg bg-zinc-800 border border-zinc-700 text-white outline-none focus:border-amber-400"
+                      className="w-full h-11 px-4 rounded-xl bg-[#161619] border border-zinc-800 text-white text-sm outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all placeholder:text-zinc-700"
                       dir="ltr"
                     />
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 pt-1">
                     <button
                       onClick={handleSave}
                       disabled={saving}
-                      className="flex-1 h-10 rounded-lg bg-amber-400 text-zinc-950 font-bold hover:bg-amber-300 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="flex-1 h-11 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm hover:bg-amber-400 transition-all disabled:opacity-40 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10"
                     >
-                      {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                      حفظ
+                      {saving && (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      )}
+                      حفظ التعديلات
                     </button>
                     <button
                       onClick={() => setEditing(false)}
-                      className="flex-1 h-10 rounded-lg border border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors"
+                      className="flex-1 h-11 rounded-xl border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all text-sm"
                     >
                       إلغاء
                     </button>
@@ -239,118 +459,88 @@ export default function ProfilePage() {
               </motion.div>
             )}
 
-            {/* ── Price List Upload (admin only) ────── */}
-            {isDefaultAdmin && (
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <FileText className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-lg font-bold text-white">رفع قائمة الأسعار</h3>
-                </div>
-                <p className="text-zinc-400 text-sm mb-4">
-                  ارفع ملف Word (.docx) — سيتم فحصه وتحويله في المتصفح ثم حفظ المحتوى
-                </p>
-
-                {fileName && !isUploading && (
-                  <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                    <span className="text-sm text-green-400 font-medium truncate">{fileName}</span>
-                    <span className="text-xs text-green-400/60 mr-auto">تم الحفظ</span>
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    onChange={handleFileSelect}
-                    disabled={isUploading}
-                    className="flex-1 h-10 px-4 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-amber-400 file:text-zinc-950 file:text-sm file:font-bold file:cursor-pointer cursor-pointer disabled:opacity-50"
-                  />
-                  <button
-                    onClick={handleUpload}
-                    disabled={!selectedFile || isUploading}
-                    className="h-10 px-6 rounded-lg bg-amber-400 text-zinc-950 font-bold hover:bg-amber-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
-                  >
-                    {isUploading ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> جاري الحفظ…</>
-                    ) : (
-                      <><Upload className="w-4 h-4" /> رفع</>
-                    )}
-                  </button>
-                </div>
-                {selectedFile && !isUploading && (
-                  <button
-                    onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                    className="mt-2 text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1"
-                  >
-                    <X className="w-3 h-3" /> إزالة
-                  </button>
-                )}
-                <p className="mt-2 text-xs text-zinc-600">
-                  💡 التحويل يحدث في المتصفح — لا يتم رفع الملف الأصلي إلى أي خادم
-                </p>
-              </div>
-            )}
+            {/* ── Admin Upload Card ─────────────────── */}
+            {isDefaultAdmin && <AdminPriceListUpload />}
 
             {/* ── Change Password ──────────────────── */}
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Lock className="w-5 h-5 text-amber-400" />
-                <h3 className="text-lg font-bold text-white">تغيير كلمة المرور</h3>
+            <div className="bg-zinc-900/80 border border-zinc-800/60 rounded-2xl p-6 backdrop-blur-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+                  <Lock className="w-5 h-5 text-zinc-500" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-bold text-white text-base">
+                    تغيير كلمة المرور
+                  </h3>
+                  <p className="text-zinc-500 text-xs mt-0.5">
+                    سيتم تسجيل خروجك من جميع الأجهزة
+                  </p>
+                </div>
               </div>
-              <p className="text-zinc-400 text-sm">
-                سيتم تسجيل خروجك من جميع الأجهزة بعد تغيير كلمة المرور.
-              </p>
               <Link
                 to="/forgot-password"
-                className="inline-block mt-3 text-sm text-amber-400 hover:text-amber-300"
+                className="inline-flex items-center gap-2 mt-2 px-4 py-2 rounded-xl bg-zinc-800/60 border border-zinc-800 text-amber-500 text-sm font-medium hover:border-amber-500/30 hover:bg-amber-500/5 transition-all"
               >
                 إعادة تعيين كلمة المرور
               </Link>
             </div>
 
             {/* ── Recent Orders ────────────────────── */}
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-lg font-bold text-white">طلباتي الأخيرة</h3>
+            <div className="bg-zinc-900/80 border border-zinc-800/60 rounded-2xl p-6 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+                    <ShoppingBag className="w-5 h-5 text-zinc-400" />
+                  </div>
+                  <h3 className="font-heading font-bold text-white text-base">
+                    طلباتي الأخيرة
+                  </h3>
                 </div>
-                <Link to="/orders" className="text-sm text-amber-400 hover:text-amber-300">
+                <Link
+                  to="/orders"
+                  className="text-xs font-medium text-amber-500 hover:text-amber-400 transition-colors"
+                >
                   عرض جميع الطلبات
                 </Link>
               </div>
 
               {loadingOrders ? (
-                <div className="py-8 text-center">
-                  <Loader2 className="w-6 h-6 animate-spin text-zinc-500 mx-auto" />
+                <div className="py-10 flex justify-center">
+                  <div className="w-7 h-7 border-2 border-zinc-800 border-t-amber-500 rounded-full animate-spin" />
                 </div>
               ) : recentOrders.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {recentOrders.map((order) => (
                     <div
                       key={order._id}
-                      className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/50"
+                      className="flex items-center justify-between p-4 rounded-xl bg-[#161619]/60 border border-zinc-800/40 hover:border-zinc-700 transition-colors"
                     >
                       <div>
-                        <p className="text-white font-medium">#{order._id.slice(-6)}</p>
-                        <p className="text-zinc-400 text-sm">{order.items.length} منتج</p>
+                        <p className="text-white font-medium text-sm">
+                          #{order._id.slice(-6)}
+                        </p>
+                        <p className="text-zinc-500 text-xs mt-0.5">
+                          {order.items.length} منتج
+                        </p>
                       </div>
                       <div className="text-left">
                         <StatusBadge status={order.status} />
-                        <p className="text-white font-medium mt-1">{order.subtotal} EGP</p>
+                        <p className="text-white font-medium text-sm mt-1">
+                          {order.subtotal} EGP
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <ShoppingBag className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-                  <p className="text-zinc-400">لم تقم بأي طلبات بعد</p>
+                <div className="text-center py-12">
+                  <ShoppingBag className="w-11 h-11 text-zinc-800 mx-auto mb-3" />
+                  <p className="text-zinc-600 text-sm">
+                    لم تقم بأي طلبات بعد
+                  </p>
                   <Link
                     to="/products"
-                    className="inline-block mt-3 px-4 py-2 rounded-lg bg-amber-400 text-zinc-950 font-medium text-sm hover:bg-amber-300 transition-colors"
+                    className="inline-flex mt-4 px-5 py-2.5 rounded-xl bg-amber-500 text-black font-bold text-sm hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/10"
                   >
                     تصفح المنتجات
                   </Link>
