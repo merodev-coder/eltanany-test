@@ -6,7 +6,6 @@ import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from 'sonner';
 import Layout from '@/components/layout/Layout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import AdminProtectedRoute from '@/components/auth/AdminProtectedRoute';
 import GuestRoute from '@/components/auth/GuestRoute';
 
 import { lazy, Suspense, type ComponentType } from 'react';
@@ -144,14 +143,7 @@ function App() {
 
               {/* Admin routes (outside Layout — no Navbar/Footer) */}
               <Route path="/AhmedEltanany" element={<AdminLoginPage />} />
-              <Route
-                path="/AhmedEltanany/dashboard"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminDashboardPage />
-                  </AdminProtectedRoute>
-                }
-              >
+              <Route path="/AhmedEltanany/dashboard" element={<AdminDashboardPage />}>
                 <Route path="orders" element={<OrdersManagement />} />
                 <Route path="add-product" element={<AddProductView />} />
                 <Route path="inventory" element={<InventoryView />} />

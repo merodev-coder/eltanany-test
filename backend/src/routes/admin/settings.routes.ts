@@ -8,7 +8,6 @@ import {
   createPriceList,
   removePriceList,
 } from './../../controllers/admin/settings.controller.js';
-import authenticateAdmin from './../../middleware/authenticateAdmin.js';
 import { paymentLimiter } from './../../middleware/paymentRateLimiter.js';
 import validate from './../../middleware/validate.js';
 import {
@@ -20,17 +19,15 @@ import {
 const router = Router();
 
 // ── Payment (backwards-compat — values are hardcoded, saving is a no-op) ──
-router.get('/payment', authenticateAdmin, getPaymentMethods);
+router.get('/payment', getPaymentMethods);
 router.post(
   '/payment',
-  authenticateAdmin,
   paymentLimiter,
   validate(updatePaymentSettingsSchema),
   updatePaymentMethods
 );
 
 // ── Price-list (client converts .docx → HTML, server just saves the string) ─
-// No authenticateAdmin — any logged-in user can upload (original behaviour).
 router.get('/price-list', getPriceList);
 router.post(
   '/price-list',

@@ -1,13 +1,10 @@
 import { Link, Outlet } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
 import AdminSidebar from '@/pages/admin/AdminSidebar';
 
 export default function AdminDashboardPage() {
-  const { logout } = useAuth();
-
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    localStorage.removeItem('admin_auth_state');
     window.location.href = '/AhmedEltanany';
   };
 

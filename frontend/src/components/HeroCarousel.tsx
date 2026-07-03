@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const slides = [
   {
@@ -62,37 +64,74 @@ export default function HeroCarousel() {
 
   return (
     <section className="relative h-[500px] sm:h-[600px] lg:h-[700px] overflow-hidden bg-zinc-950">
-      {/* Background Image Container */}
-      <div className="absolute inset-0">
-        <img
-          src={slides[currentSlide].image}
-          alt={slides[currentSlide].title}
-          className="w-full h-full object-cover transition-all duration-700 ease-in-out"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-zinc-950/60 to-transparent" />
-      </div>
-
-      {/* Content Container */}
-      <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
-        <div className="w-full lg:w-1/2 text-right ml-auto">
-          <div className="inline-block px-4 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 text-sm font-medium mb-4">
-            {slides[currentSlide].tag}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentSlide}
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -50 }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+          className="absolute inset-0"
+        >
+          {/* Background Image Container */}
+          <div className="absolute inset-0">
+            <img
+              src={slides[currentSlide].image}
+              alt={slides[currentSlide].title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-zinc-950/60 to-transparent" />
           </div>
-          <h1 className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-white mb-4 leading-tight">
-            {highlightTitle(slides[currentSlide].title, slides[currentSlide].highlighted)}
-          </h1>
-          <p className="font-body text-base sm:text-lg text-white/70 mb-8 leading-relaxed max-w-xl">
-            {slides[currentSlide].subtitle}
-          </p>
-          <a
-            href={slides[currentSlide].link}
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-amber-400 text-zinc-950 font-heading font-bold text-lg hover:bg-amber-300 transition-all duration-300 shadow-lg shadow-amber-400/20"
-          >
-            {slides[currentSlide].cta}
-            <ChevronLeft className="w-5 h-5" />
-          </a>
-        </div>
-      </div>
+
+          {/* Content Container */}
+          <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="w-full lg:w-1/2 text-right ml-auto"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+                className="inline-block px-4 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 text-sm font-medium mb-4"
+              >
+                {slides[currentSlide].tag}
+              </motion.div>
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-white mb-4 leading-tight"
+              >
+                {highlightTitle(slides[currentSlide].title, slides[currentSlide].highlighted)}
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="font-body text-base sm:text-lg text-white/70 mb-8 leading-relaxed max-w-xl"
+              >
+                {slides[currentSlide].subtitle}
+              </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+              >
+                <Link
+                  to={slides[currentSlide].link}
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-amber-400 text-zinc-950 font-heading font-bold text-lg hover:bg-amber-300 transition-all duration-300 shadow-lg shadow-amber-400/20"
+                >
+                  {slides[currentSlide].cta}
+                  <ChevronLeft className="w-5 h-5" />
+                </Link>
+              </motion.div>
+            </motion.div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Navigation Arrows */}
       <button

@@ -1,33 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/context/AuthContext';
+import axiosClient from '@/api/apiClient';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { adminLogin, isAdmin } = useAuth();
   const navigate = useNavigate();
-
-  // Redirect if already logged in as admin
-  useEffect(() => {
-    if (isAdmin) {
-      navigate('/AhmedEltanany/dashboard', { replace: true });
-    }
-  }, [isAdmin, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const result = await adminLogin(email, password);
-    if (result.success) {
-      navigate('/AhmedEltanany/dashboard');
-    } else {
-      setError(result.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
+    try {
+      const res = await axiosClient.post('/admin/auth/login', { email, password });
+      if (res.data.success) {
+        localStorage.setItem('admin_auth_state', 'active');
+        navigate('/AhmedEltanany/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
+    } finally {
       setLoading(false);
     }
   };
