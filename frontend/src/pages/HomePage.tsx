@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Star, Shield, Tag, Truck, Headphones, RefreshCw, Check } from 'lucide-react';
+import { ChevronLeft, Star, Shield, Tag, Truck, Headphones, RefreshCw, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '@/components/ui-custom/ProductCard';
+import HeroCarousel from '@/components/HeroCarousel';
 import { getFeaturedLaptops, getWhyCards, getStats, getTestimonials, subscribeToNewsletter } from '@/services/api';
 import type { Product, WhyCard, StatItem, Testimonial } from '@/types';
 
@@ -16,42 +17,13 @@ const whyIcons: Record<string, typeof Shield> = {
   refresh: RefreshCw,
 };
 
-const heroSlides = [
-  {
-    id: 1,
-    title: 'لابتوبات احترافية بأفضل الأسعار',
-    subtitle: 'اكتشف تشكيلة واسعة من اللابتوبات من أشهر الماركات العالمية',
-    image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=1920&q=80',
-    link: '/laptops',
-    cta: 'تسوق الآن'
-  },
-  {
-    id: 2,
-    title: 'شحن سريع ومجاني',
-    subtitle: 'توصيل لجميع المحافظات خلال 3-5 أيام عمل',
-    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1920&q=80',
-    link: '/laptops',
-    cta: 'اكتشف المزيد'
-  },
-  {
-    id: 3,
-    title: 'ضمان سنة كاملة',
-    subtitle: 'خدمة ما بعد البيع ودعم فني متاح على مدار الساعة',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1920&q=80',
-    link: '/contact',
-    cta: 'تواصل معنا'
-  }
-];
-
 export default function HomePage() {
   const [featured, setFeatured] = useState<Product[]>([]);
   const [whyCards, setWhyCards] = useState<WhyCard[]>([]);
   const [stats, setStats] = useState<StatItem[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [activeWhyCard, setActiveWhyCard] = useState<number | null>(null);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [newsletterContact, setNewsletterContact] = useState('');
   const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
   const [newsletterSuccess, setNewsletterSuccess] = useState(false);
@@ -72,18 +44,6 @@ export default function HomePage() {
     load();
   }, []);
 
-  const startAutoPlay = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % heroSlides.length);
-    }, 5500);
-  }, [heroSlides.length]);
-
-  useEffect(() => {
-    if (heroSlides.length > 0) startAutoPlay();
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [heroSlides.length]);
-
   useEffect(() => {
     if (testimonials.length === 0) return;
     const t = setInterval(() => {
@@ -91,14 +51,6 @@ export default function HomePage() {
     }, 5000);
     return () => clearInterval(t);
   }, [testimonials]);
-
-  const goToSlide = (idx: number) => {
-    setCurrentSlide(idx);
-    startAutoPlay();
-  };
-
-  const nextSlide = () => goToSlide((currentSlide + 1) % heroSlides.length);
-  const prevSlide = () => goToSlide((currentSlide - 1 + heroSlides.length) % heroSlides.length);
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,90 +71,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <section className="relative h-[500px] sm:h-[600px] lg:h-[700px] overflow-hidden">
-        <AnimatePresence mode="wait">
-          {heroSlides[currentSlide] && (
-            <motion.div
-              key={heroSlides[currentSlide].id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6 }}
-              className="absolute inset-0"
-            >
-              <div className="absolute inset-0">
-                <img
-                  src={heroSlides[currentSlide].image}
-                  alt={heroSlides[currentSlide].title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-carbon/80 via-carbon/30 to-transparent" />
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center px-4 max-w-3xl">
-                  <motion.h1
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                    className="font-heading font-black text-3xl sm:text-4xl lg:text-6xl text-white mb-4"
-                  >
-                    {heroSlides[currentSlide].title}
-                  </motion.h1>
-                  <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.35 }}
-                    className="font-body text-lg sm:text-xl text-white/80 mb-8"
-                  >
-                    {heroSlides[currentSlide].subtitle}
-                  </motion.p>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.5 }}
-                  >
-                    <Link
-                      to={heroSlides[currentSlide].link}
-                      className="inline-flex items-center gap-2 px-8 py-4 rounded-xl gradient-brand text-white font-heading font-bold text-lg hover:shadow-glow transition-shadow duration-300"
-                    >
-                      {heroSlides[currentSlide].cta}
-                      <ChevronLeft className="w-5 h-5" />
-                    </Link>
-                  </motion.div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <button
-          onClick={nextSlide}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors duration-200"
-          aria-label="التالي"
-        >
-          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
-        <button
-          onClick={prevSlide}
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors duration-200"
-          aria-label="السابق"
-        >
-          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
-
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-          {heroSlides.map((_: any, idx: number) => (
-            <button
-              key={idx}
-              onClick={() => goToSlide(idx)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                idx === currentSlide ? 'w-8 bg-ignition-start' : 'w-2 bg-white/50 hover:bg-white/70'
-              }`}
-              aria-label={`انتقل للشريحة ${idx + 1}`}
-            />
-          ))}
-        </div>
-      </section>
+      <HeroCarousel />
 
       <section className="bg-carbon py-10 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

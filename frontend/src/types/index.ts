@@ -170,3 +170,27 @@ export interface MonthlyInventorySnapshot {
   };
   unitsSoldThisMonth: number;
 }
+
+// ────────────────────────────────────────────────────────────
+// Hero / Why Cards / Stats / Testimonials
+// ────────────────────────────────────────────────────────────
+export interface WhyCard {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+export interface StatItem {
+  id: string;
+  value: string;
+  suffix: string;
+  label: string;
+}
+
+export interface Testimonial {
+  id: string;
+  name: string;
+  text: string;
+  rating: number;
+}

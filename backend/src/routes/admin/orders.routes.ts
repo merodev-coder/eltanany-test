@@ -1,6 +1,5 @@
 // backend/src/routes/admin/orders.routes.ts
 import { Router } from 'express';
-import authenticateAdmin from '../../middleware/authenticateAdmin.js';
 import {
   getAllOrders,
   getOrderById,
@@ -10,9 +9,6 @@ import {
 } from '../../controllers/admin/orders.controller.js';
 
 const router = Router();
-
-// All routes require admin authentication and optional X-Admin-Origin header
-router.use(authenticateAdmin());
 
 // List all orders (supports ?status=pending&page=1&limit=20)
 router.get('/', getAllOrders);
