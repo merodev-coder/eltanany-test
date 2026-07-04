@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import ProductCard from '@/components/ui-custom/ProductCard';
-import { getAllLaptops, filterLaptops, getFilterOptions } from '@/services/api';
-import type { Product } from '@/types';
+import { getAllLaptops, filterLaptops } from '@/services/api';
+import type { Product, BrandType, CPUType, GPUType, RAMType, StorageType } from '@/types';
+import { BRANDS, CPUS, GPUS, RAMS, STORAGES } from '@/types';
 
 export default function LaptopsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -11,33 +12,22 @@ export default function LaptopsPage() {
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    brand: true, price: true, category: true, cpu: false, gpu: false, ram: false, storage: false, screen: false, os: false,
+    brand: true, price: true, category: true, cpu: false, gpu: false, ram: false, storage: false,
   });
 
-  const filterOptions = {
-    brands: ['Dell', 'HP', 'Lenovo', 'Apple', 'ASUS', 'Acer', 'MSI'],
-    cpus: ['Core i3', 'Core i5', 'Core i7', 'Core i9', 'Ryzen 5', 'Ryzen 7', 'Ryzen 9', 'Apple M1', 'Apple M2', 'Apple M3'],
-    gpus: ['Intel Iris Xe', 'Intel UHD Graphics', 'AMD Radeon', 'NVIDIA GTX 1650', 'NVIDIA RTX 3050', 'NVIDIA RTX 4050', 'NVIDIA RTX 4060', 'Apple GPU'],
-    rams: ['8GB', '16GB', '32GB', '64GB'],
-    storages: ['256GB SSD', '512GB SSD', '1TB SSD', '2TB SSD'],
-    oss: ['Windows 11', 'macOS', 'Dos / Linux'],
-  };
-
-  const [selectedBrands, setSelectedBrands] = useState<string[]>(() => {
+  const [selectedBrands, setSelectedBrands] = useState<BrandType[]>(() => {
     const b = searchParams.get('brand');
-    return b ? b.split(',') : [];
+    return b ? b.split(',') as BrandType[] : [];
   });
   const [selectedCategory, setSelectedCategory] = useState<string[]>(() => {
     const c = searchParams.get('category');
     return c ? c.split(',') : [];
   });
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
-  const [selectedCpu, setSelectedCpu] = useState<string[]>([]);
-  const [selectedGpu, setSelectedGpu] = useState<string[]>([]);
-  const [selectedRam, setSelectedRam] = useState<string[]>([]);
-  const [selectedStorage, setSelectedStorage] = useState<string[]>([]);
-  const [selectedScreen, setSelectedScreen] = useState<string[]>([]);
-  const [selectedOs, setSelectedOs] = useState<string[]>([]);
+  const [selectedCpu, setSelectedCpu] = useState<CPUType[]>([]);
+  const [selectedGpu, setSelectedGpu] = useState<GPUType[]>([]);
+  const [selectedRam, setSelectedRam] = useState<RAMType[]>([]);
+  const [selectedStorage, setSelectedStorage] = useState<StorageType[]>([]);
   const [sortBy, setSortBy] = useState('default');
 
   useEffect(() => {
@@ -52,21 +42,19 @@ export default function LaptopsPage() {
       if (selectedGpu.length) filters.gpu = selectedGpu;
       if (selectedRam.length) filters.ram = selectedRam;
       if (selectedStorage.length) filters.storage = selectedStorage;
-      if (selectedScreen.length) filters.screenSize = selectedScreen;
-      if (selectedOs.length) filters.os = selectedOs;
 
       const filtered = Object.keys(filters).length > 0 ? await filterLaptops(filters) : all;
       setProducts(filtered);
       setLoading(false);
     };
     load();
-  }, [selectedBrands, selectedCategory, priceRange, selectedCpu, selectedGpu, selectedRam, selectedStorage, selectedScreen, selectedOs]);
+  }, [selectedBrands, selectedCategory, priceRange, selectedCpu, selectedGpu, selectedRam, selectedStorage]);
 
   const toggleSection = (key: string) => {
     setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const toggleArrayFilter = (value: string, arr: string[], setArr: (v: string[]) => void) => {
+  const toggleArrayFilter = <T extends string | number>(value: T, arr: T[], setArr: (v: T[]) => void) => {
     if (arr.includes(value)) setArr(arr.filter(v => v !== value));
     else setArr([...arr, value]);
   };
@@ -79,20 +67,18 @@ export default function LaptopsPage() {
     setSelectedGpu([]);
     setSelectedRam([]);
     setSelectedStorage([]);
-    setSelectedScreen([]);
-    setSelectedOs([]);
     setSearchParams({});
   };
 
   const activeFiltersCount = selectedBrands.length + selectedCategory.length + (priceRange[1] < 100000 ? 1 : 0) +
-    selectedCpu.length + selectedGpu.length + selectedRam.length + selectedStorage.length + selectedScreen.length + selectedOs.length;
+    selectedCpu.length + selectedGpu.length + selectedRam.length + selectedStorage.length;
 
   const sortedProducts = useMemo(() => {
     const sorted = [...products];
     switch (sortBy) {
       case 'price-asc': return sorted.sort((a, b) => a.price - b.price);
       case 'price-desc': return sorted.sort((a, b) => b.price - a.price);
-      case 'rating': return sorted.sort((a, b) => b.rating - a.rating);
+      case 'rating': return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       case 'newest': return sorted.sort((a, b) => (b.isBrandNew ? 1 : 0) - (a.isBrandNew ? 1 : 0));
       default: return sorted;
     }
@@ -193,7 +179,7 @@ export default function LaptopsPage() {
 
               {filterSection('الماركة', 'brand',
                 <div className="max-h-48 overflow-y-auto space-y-0.5">
-                  {filterOptions.brands.map(b => checkbox(b, selectedBrands.includes(b), () => toggleArrayFilter(b, selectedBrands, setSelectedBrands), `brand-${b}`))}
+                  {BRANDS.map(b => checkbox(b, selectedBrands.includes(b), () => toggleArrayFilter(b, selectedBrands, setSelectedBrands), `brand-${b}`))}
                 </div>
               )}
 
@@ -228,33 +214,28 @@ export default function LaptopsPage() {
 
               {filterSection('المعالج', 'cpu',
                 <div className="max-h-48 overflow-y-auto space-y-0.5">
-                  {filterOptions.cpus.map(c => checkbox(c, selectedCpu.includes(c), () => toggleArrayFilter(c, selectedCpu, setSelectedCpu), `cpu-${c}`))}
+                  {CPUS.map(c => checkbox(c, selectedCpu.includes(c), () => toggleArrayFilter(c, selectedCpu, setSelectedCpu), `cpu-${c}`))}
                 </div>
               )}
 
               {filterSection('كرت الشاشة', 'gpu',
                 <div className="max-h-48 overflow-y-auto space-y-0.5">
-                  {filterOptions.gpus.map(g => checkbox(g, selectedGpu.includes(g), () => toggleArrayFilter(g, selectedGpu, setSelectedGpu), `gpu-${g}`))}
+                  {GPUS.map(g => checkbox(g, selectedGpu.includes(g), () => toggleArrayFilter(g, selectedGpu, setSelectedGpu), `gpu-${g}`))}
                 </div>
               )}
 
               {filterSection('الرام', 'ram',
                 <div className="space-y-0.5">
-                  {filterOptions.rams.map(r => checkbox(r, selectedRam.includes(r), () => toggleArrayFilter(r, selectedRam, setSelectedRam), `ram-${r}`))}
+                  {RAMS.map(r => checkbox(`${r} GB`, selectedRam.includes(r), () => toggleArrayFilter(r, selectedRam, setSelectedRam), `ram-${r}`))}
                 </div>
               )}
 
               {filterSection('التخزين', 'storage',
                 <div className="space-y-0.5">
-                  {filterOptions.storages.map(s => checkbox(s, selectedStorage.includes(s), () => toggleArrayFilter(s, selectedStorage, setSelectedStorage), `storage-${s}`))}
+                  {STORAGES.map(s => checkbox(`${s} GB`, selectedStorage.includes(s), () => toggleArrayFilter(s, selectedStorage, setSelectedStorage), `storage-${s}`))}
                 </div>
               )}
 
-              {filterSection('نظام التشغيل', 'os',
-                <div className="space-y-0.5">
-                  {filterOptions.oss.map(o => checkbox(o, selectedOs.includes(o), () => toggleArrayFilter(o, selectedOs, setSelectedOs), `os-${o}`))}
-                </div>
-              )}
             </div>
           </aside>
 

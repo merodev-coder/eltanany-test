@@ -18,7 +18,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { totalItems } = useCart();
   const { user, isAuthenticated, isAdmin, isLoading, logout } = useAuth();
@@ -51,15 +50,6 @@ export default function Navbar() {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
-      setSearchOpen(false);
-      setSearchQuery('');
-    }
-  };
 
   const handleLogout = async () => {
     await logout();
@@ -264,6 +254,45 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-16 right-0 left-0 z-[99] bg-white border-b border-steel-light md:hidden overflow-hidden"
+          >
+            <div className="px-4 py-4 space-y-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`block py-3 px-4 rounded-lg font-body text-sm font-medium transition-colors duration-200 ${
+                    location.pathname === link.href
+                      ? 'bg-ignition-start/10 text-ignition-start'
+                      : 'text-ink/70 hover:bg-steel-light'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {!isAuthenticated && (
+                <Link
+                  to="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="block py-3 px-4 rounded-lg font-body text-sm font-medium text-ignition-start hover:bg-ignition-start/10 transition-colors"
+                >
+                  تسجيل الدخول
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="h-16" />
     </>

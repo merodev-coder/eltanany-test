@@ -1,15 +1,21 @@
 // frontend/src/pages/admin/AddProductView.tsx
 import { useState, useCallback } from 'react';
-import { Plus, Upload, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { addProduct } from '@/services/api';
 import { UploadDropzone } from '@/components/ui/uploadthing';
-import type { UTUploadResult } from '@/types';
+import type { UTUploadResult, BrandType, CPUType, GPUType, RAMType, StorageType } from '@/types';
+import { BRANDS, CPUS, GPUS, RAMS, STORAGES } from '@/types';
 
 export default function AddProductView() {
 const [form, setForm] = useState({
 name: '',
 category: 'laptop',
+brand: '' as BrandType | '',
+cpu: '' as CPUType | '',
+gpu: '' as GPUType | '',
+ram: undefined as RAMType | undefined,
+storage: undefined as StorageType | undefined,
 price: '',
 sellingPrice: '',
 stock: '0',
@@ -41,6 +47,13 @@ try {
 await addProduct({
 name: form.name,
 category: form.category,
+brand: form.brand,
+specs: {
+cpu: form.cpu,
+gpu: form.gpu,
+ram: form.ram,
+storage: form.storage,
+},
 price: Number(form.price),
 sellingPrice: Number(form.sellingPrice) || undefined,
 stock: Number(form.stock),
@@ -52,6 +65,11 @@ setMessage('✅ تم إضافة المنتج بنجاح');
 setForm({
 name: '',
 category: 'laptop',
+brand: '' as BrandType | '',
+cpu: '' as CPUType | '',
+gpu: '' as GPUType | '',
+ram: undefined as RAMType | undefined,
+storage: undefined as StorageType | undefined,
 price: '',
 sellingPrice: '',
 stock: '0',
@@ -108,6 +126,91 @@ className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-no
 >
 <option value="laptop">لابتوب</option>
 <option value="accessory">إكسسوار</option>
+</select>
+</div>
+
+{/* Brand */}
+<div>
+<label className="block text-sm font-body text-gray-600 mb-1">الماركة <span className="text-error">*</span></label>
+<select
+name="brand"
+value={form.brand}
+onChange={handleChange}
+required
+className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 font-body"
+>
+<option value="">اختر الماركة</option>
+{BRANDS.map(brand => (
+<option key={brand} value={brand}>{brand}</option>
+))}
+</select>
+</div>
+
+{/* CPU */}
+<div>
+<label className="block text-sm font-body text-gray-600 mb-1">المعالج <span className="text-error">*</span></label>
+<select
+name="cpu"
+value={form.cpu}
+onChange={handleChange}
+required
+className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 font-body"
+>
+<option value="">اختر المعالج</option>
+{CPUS.map(cpu => (
+<option key={cpu} value={cpu}>{cpu}</option>
+))}
+</select>
+</div>
+
+{/* GPU */}
+<div>
+<label className="block text-sm font-body text-gray-600 mb-1">كرت الشاشة <span className="text-error">*</span></label>
+<select
+name="gpu"
+value={form.gpu}
+onChange={handleChange}
+required
+className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 font-body"
+>
+<option value="">اختر كرت الشاشة</option>
+{GPUS.map(gpu => (
+<option key={gpu} value={gpu}>{gpu}</option>
+))}
+</select>
+</div>
+
+{/* RAM */}
+<div>
+<label className="block text-sm font-body text-gray-600 mb-1">الرام <span className="text-error">*</span></label>
+<select
+name="ram"
+value={form.ram}
+onChange={handleChange}
+required
+className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 font-body"
+>
+<option value="">اختر الرام</option>
+{RAMS.map(ram => (
+<option key={ram} value={ram}>{ram} GB</option>
+))}
+</select>
+</div>
+
+{/* Storage */}
+<div>
+<label className="block text-sm font-body text-gray-600 mb-1">التخزين <span className="text-error">*</span></label>
+<select
+name="storage"
+value={form.storage}
+onChange={handleChange}
+required
+className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 font-body"
+>
+<option value="">اختر التخزين</option>
+{STORAGES.map(storage => (
+<option key={storage} value={storage}>{storage} GB</option>
+))}
 </select>
 </div>
 

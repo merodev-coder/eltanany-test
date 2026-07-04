@@ -4,10 +4,11 @@
 
 import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Star, Plus, Loader2 } from 'lucide-react';
+import { X, Star } from 'lucide-react';
 import axiosClient from '@/api/apiClient';
 import { UploadDropzone } from '@/components/ui/uploadthing';
-import type { UTUploadResult } from '@/types';
+import type { UTUploadResult, BrandType, CPUType, GPUType, RAMType, StorageType } from '@/types';
+import { BRANDS, CPUS, GPUS, RAMS, STORAGES } from '@/types';
 import type { Product } from '@/types';
 
 interface EditProductModalProps {
@@ -24,14 +25,18 @@ onClose,
 onUpdate,
 }: EditProductModalProps) {
 const [name, setName] = useState<string>(product.name);
-const [buyingPrice, setBuyingPrice] = useState<number>(product.buyingPrice);
-const [sellingPrice, setSellingPrice] = useState<number>(product.sellingPrice);
+const [brand, setBrand] = useState<BrandType | ''>(product.brand || '');
+const [cpu, setCpu] = useState<CPUType | ''>(product.specs?.cpu || '');
+const [gpu, setGpu] = useState<GPUType | ''>(product.specs?.gpu || '');
+const [ram, setRam] = useState<RAMType | undefined>(product.specs?.ram);
+const [storage, setStorage] = useState<StorageType | undefined>(product.specs?.storage);
+const [buyingPrice, setBuyingPrice] = useState<number>(product.buyingPrice || 0);
+const [sellingPrice, setSellingPrice] = useState<number>(product.sellingPrice || 0);
 const [stock, setStock] = useState<number>(product.stock);
 const [description, setDescription] = useState<string>(product.description || '');
 const [imageUrl, setImageUrl] = useState<string>(product.imageUrl || '');
 const [images, setImages] = useState<string[]>(product.images || []);
 const [isFeatured, setIsFeatured] = useState<boolean>(product.isFeatured || false);
-const [uploading, setUploading] = useState(false);
 const [isLoading, setIsLoading] = useState(false);
 const [error, setError] = useState<string | null>(null);
 
@@ -56,11 +61,6 @@ const handleSubmit = async (e: React.FormEvent) => {
 e.preventDefault();
 setError(null);
 
-if (uploading) {
-setError('يرجى انتظار اكتمال رفع الصورة قبل الحفظ');
-return;
-}
-
 if (!name.trim()) {
 setError('يرجى إدخال اسم المنتج');
 return;
@@ -78,6 +78,13 @@ return;
 
 const body: any = {
 name,
+brand,
+specs: {
+cpu,
+gpu,
+ram,
+storage,
+},
 buyingPrice,
 sellingPrice,
 price: sellingPrice, // Sync price with sellingPrice
@@ -91,7 +98,23 @@ isFeatured,
 const response = await axiosClient.patch(`/admin/products/${product._id}`, body);
 
 if (response.data.success) {
-onUpdate({ name, buyingPrice, sellingPrice, stock, description, imageUrl: primaryImage, images, isFeatured });
+onUpdate({ 
+  name, 
+  brand: brand || undefined, 
+  specs: { 
+    cpu: cpu || undefined, 
+    gpu: gpu || undefined, 
+    ram, 
+    storage 
+  }, 
+  buyingPrice, 
+  sellingPrice, 
+  stock, 
+  description, 
+  imageUrl: primaryImage, 
+  images, 
+  isFeatured 
+});
 onClose();
 } else {
 setError(response.data.message || 'حدث خطأ غير متوقع');
@@ -138,6 +161,96 @@ onChange={(e) => setName(e.target.value)}
 className="w-full h-11 px-4 rounded-lg bg-steel-light border-0 font-body text-sm text-[#18181B] outline-none focus:ring-2 focus:ring-ignition-start/30"
 disabled={isLoading}
 />
+</div>
+
+{/* Brand */}
+<div>
+<label className="block font-body text-sm font-medium text-[#18181B] mb-1.5">
+الماركة
+</label>
+<select
+value={brand}
+onChange={(e) => setBrand(e.target.value as BrandType | '')}
+className="w-full h-11 px-4 rounded-lg bg-steel-light border-0 font-body text-sm text-[#18181B] outline-none focus:ring-2 focus:ring-ignition-start/30"
+disabled={isLoading}
+>
+<option value="">اختر الماركة</option>
+{BRANDS.map(b => (
+<option key={b} value={b}>{b}</option>
+))}
+</select>
+</div>
+
+{/* CPU */}
+<div>
+<label className="block font-body text-sm font-medium text-[#18181B] mb-1.5">
+المعالج
+</label>
+<select
+value={cpu}
+onChange={(e) => setCpu(e.target.value as CPUType | '')}
+className="w-full h-11 px-4 rounded-lg bg-steel-light border-0 font-body text-sm text-[#18181B] outline-none focus:ring-2 focus:ring-ignition-start/30"
+disabled={isLoading}
+>
+<option value="">اختر المعالج</option>
+{CPUS.map(c => (
+<option key={c} value={c}>{c}</option>
+))}
+</select>
+</div>
+
+{/* GPU */}
+<div>
+<label className="block font-body text-sm font-medium text-[#18181B] mb-1.5">
+كرت الشاشة
+</label>
+<select
+value={gpu}
+onChange={(e) => setGpu(e.target.value as GPUType | '')}
+className="w-full h-11 px-4 rounded-lg bg-steel-light border-0 font-body text-sm text-[#18181B] outline-none focus:ring-2 focus:ring-ignition-start/30"
+disabled={isLoading}
+>
+<option value="">اختر كرت الشاشة</option>
+{GPUS.map(g => (
+<option key={g} value={g}>{g}</option>
+))}
+</select>
+</div>
+
+{/* RAM */}
+<div>
+<label className="block font-body text-sm font-medium text-[#18181B] mb-1.5">
+الرام
+</label>
+<select
+value={ram || ''}
+onChange={(e) => setRam(e.target.value ? Number(e.target.value) as RAMType : undefined)}
+className="w-full h-11 px-4 rounded-lg bg-steel-light border-0 font-body text-sm text-[#18181B] outline-none focus:ring-2 focus:ring-ignition-start/30"
+disabled={isLoading}
+>
+<option value="">اختر الرام</option>
+{RAMS.map(r => (
+<option key={r} value={r}>{r} GB</option>
+))}
+</select>
+</div>
+
+{/* Storage */}
+<div>
+<label className="block font-body text-sm font-medium text-[#18181B] mb-1.5">
+التخزين
+</label>
+<select
+value={storage || ''}
+onChange={(e) => setStorage(e.target.value ? Number(e.target.value) as StorageType : undefined)}
+className="w-full h-11 px-4 rounded-lg bg-steel-light border-0 font-body text-sm text-[#18181B] outline-none focus:ring-2 focus:ring-ignition-start/30"
+disabled={isLoading}
+>
+<option value="">اختر التخزين</option>
+{STORAGES.map(s => (
+<option key={s} value={s}>{s} GB</option>
+))}
+</select>
 </div>
 
 {/* Description */}
@@ -190,7 +303,6 @@ onUploadError={(err: Error) => {
 setError(`خطأ في رفع الصور: ${err.message}`);
 }}
 />
-{uploading && <p className="font-body text-xs text-slate mt-1">جاري رفع الصورة...</p>}
 </div>
 
 {/* isFeatured Toggle */}
@@ -279,7 +391,7 @@ className="flex-1 h-11 rounded-xl border-2 border-steel-light font-body font-med
 </button>
 <button
 type="submit"
-disabled={isLoading || uploading}
+disabled={isLoading}
 className="flex-1 h-11 rounded-xl gradient-brand text-white font-heading font-bold text-sm flex items-center justify-center gap-2 hover:shadow-glow transition-shadow disabled:opacity-50"
 >
 {isLoading ? (

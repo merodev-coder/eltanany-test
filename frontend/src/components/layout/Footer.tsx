@@ -1,35 +1,43 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Instagram, Facebook, MessageCircle } from 'lucide-react';
+import { MapPin, Phone, Mail, Facebook } from 'lucide-react';
 import { CONTACT_INFO } from '@/config/constants';
 
 export default function Footer() {
   return (
-    <footer className="bg-carbon text-white mt-auto">
+    <footer className="bg-gradient-to-b from-carbon to-zinc-900 text-white mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <img src="/images/logo.jpeg" alt="ELTANANY 2" className="h-12 w-12 rounded object-contain" />
-              <span className="font-heading font-bold text-xl">ELTANANY 2</span>
+              <img src="/images/logo.jpeg" alt="ELTANANY 2" className="h-12 w-12 rounded-lg object-contain shadow-lg" />
+              <span className="font-heading font-bold text-xl bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">ELTANANY 2</span>
             </div>
             <p className="text-white/60 font-body text-sm leading-relaxed">
               وجهتك الأولى للابتوبات والإكسسوارات في مصر. منتجات أصلية مضمونة بأفضل الأسعار.
             </p>
             <div className="flex items-center gap-3 pt-2">
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-white/10 hover:bg-ignition-start transition-colors duration-200">
-                <Instagram className="w-4 h-4" />
-              </a>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-white/10 hover:bg-ignition-start transition-colors duration-200">
+              <a href="https://www.facebook.com/share/1E6PEp8531/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-white/10 hover:bg-ignition-start transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-ignition-start/30">
                 <Facebook className="w-4 h-4" />
               </a>
-              <a href={CONTACT_INFO.WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-white/10 hover:bg-green-500 transition-colors duration-200">
-                <MessageCircle className="w-4 h-4" />
+              <a href={CONTACT_INFO.WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-white/10 hover:bg-green-500 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-green-500/30">
+                <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M16 31C23.732 31 30 24.732 30 17C30 9.26801 23.732 3 16 3C8.26801 3 2 9.26801 2 17C2 19.5109 2.661 21.8674 3.81847 23.905L2 31L9.31486 29.3038C11.3014 30.3854 13.5789 31 16 31ZM16 28.8462C22.5425 28.8462 27.8462 23.5425 27.8462 17C27.8462 10.4576 22.5425 5.15385 16 5.15385C9.45755 5.15385 4.15385 10.4576 4.15385 17C4.15385 19.5261 4.9445 21.8675 6.29184 23.7902L5.23077 27.7692L9.27993 26.7569C11.1894 28.0746 13.5046 28.8462 16 28.8462Z" fill="#BFC8D0"/>
+                  <path d="M28 16C28 22.6274 22.6274 28 16 28C13.4722 28 11.1269 27.2184 9.19266 25.8837L5.09091 26.9091L6.16576 22.8784C4.80092 20.9307 4 18.5589 4 16C4 9.37258 9.37258 4 16 4C22.6274 4 28 9.37258 28 16Z" fill="url(#paint0_linear_87_7264)"/>
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M16 30C23.732 30 30 23.732 30 16C30 8.26801 23.732 2 16 2C8.26801 2 2 8.26801 2 16C2 18.5109 2.661 20.8674 3.81847 22.905L2 30L9.31486 28.3038C11.3014 29.3854 13.5789 30 16 30ZM16 27.8462C22.5425 27.8462 27.8462 22.5425 27.8462 16C27.8462 9.45755 22.5425 4.15385 16 4.15385C9.45755 4.15385 4.15385 9.45755 4.15385 16C4.15385 18.5261 4.9445 20.8675 6.29184 22.7902L5.23077 26.7692L9.27993 25.7569C11.1894 27.0746 13.5046 27.8462 16 27.8462Z" fill="white"/>
+                  <path d="M12.5 9.49989C12.1672 8.83131 11.6565 8.8905 11.1407 8.8905C10.2188 8.8905 8.78125 9.99478 8.78125 12.05C8.78125 13.7343 9.52345 15.578 12.0244 18.3361C14.438 20.9979 17.6094 22.3748 20.2422 22.3279C22.875 22.2811 23.4167 20.0154 23.4167 19.2503C23.4167 18.9112 23.2062 18.742 23.0613 18.696C22.1641 18.2654 20.5093 17.4631 20.1328 17.3124C19.7563 17.1617 19.5597 17.3656 19.4375 17.4765C19.0961 17.8018 18.4193 18.7608 18.1875 18.9765C17.9558 19.1922 17.6103 19.083 17.4665 19.0015C16.9374 18.7892 15.5029 18.1511 14.3595 17.0426C12.9453 15.6718 12.8623 15.2001 12.5959 14.7803C12.3828 14.4444 12.5392 14.2384 12.6172 14.1483C12.9219 13.7968 13.3426 13.254 13.5313 12.9843C13.7199 12.7145 13.5702 12.305 13.4803 12.05C13.0938 10.953 12.7663 10.0347 12.5 9.49989Z" fill="white"/>
+                  <defs>
+                    <linearGradient id="paint0_linear_87_7264" x1="26.5" y1="7" x2="4" y2="28" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#5BD066"/>
+                      <stop offset="1" stop-color="#27B43E"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
               </a>
             </div>
           </div>
 
           <div>
-            <h4 className="font-heading font-bold text-lg mb-4">روابط سريعة</h4>
+            <h4 className="font-heading font-bold text-lg mb-4 bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">روابط سريعة</h4>
             <ul className="space-y-2">
               {[
                 { label: 'الرئيسية', href: '/' },
@@ -39,7 +47,7 @@ export default function Footer() {
                 { label: 'الأسئلة الشائعة', href: '/faq' },
               ].map(link => (
                 <li key={link.href}>
-                  <Link to={link.href} className="text-white/60 hover:text-ignition-end transition-colors duration-200 font-body text-sm">
+                  <Link to={link.href} className="text-white/60 hover:text-ignition-end transition-all duration-200 hover:translate-x-1 inline-block font-body text-sm">
                     {link.label}
                   </Link>
                 </li>
@@ -48,7 +56,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-heading font-bold text-lg mb-4">خدمة العملاء</h4>
+            <h4 className="font-heading font-bold text-lg mb-4 bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">خدمة العملاء</h4>
             <ul className="space-y-2">
               {[
                 { label: 'تواصل معنا', href: '/contact' },
@@ -58,7 +66,7 @@ export default function Footer() {
                 { label: 'حماية المشتري', href: '/faq' },
               ].map(link => (
                 <li key={link.label}>
-                  <Link to={link.href} className="text-white/60 hover:text-ignition-end transition-colors duration-200 font-body text-sm">
+                  <Link to={link.href} className="text-white/60 hover:text-ignition-end transition-all duration-200 hover:translate-x-1 inline-block font-body text-sm">
                     {link.label}
                   </Link>
                 </li>
@@ -67,31 +75,31 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-heading font-bold text-lg mb-4">تواصل معنا</h4>
+            <h4 className="font-heading font-bold text-lg mb-4 bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">تواصل معنا</h4>
             <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-ignition-start flex-shrink-0 mt-0.5" />
-                <span className="text-white/60 font-body text-sm">القاهرة، مصر</span>
+              <div className="flex items-start gap-3 group">
+                <MapPin className="w-5 h-5 text-ignition-start flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-200" />
+                <span className="text-white/60 font-body text-sm group-hover:text-white transition-colors duration-200">القاهرة، مصر</span>
               </div>
-              <div className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-ignition-start flex-shrink-0" />
-                <span className="text-white/60 font-body text-sm" dir="ltr">+20 {CONTACT_INFO.WHATSAPP_NUMBER}</span>
+              <div className="flex items-center gap-3 group">
+                <Phone className="w-5 h-5 text-ignition-start flex-shrink-0 group-hover:scale-110 transition-transform duration-200" />
+                <span className="text-white/60 font-body text-sm group-hover:text-white transition-colors duration-200" dir="ltr">+20 {CONTACT_INFO.WHATSAPP_NUMBER}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-ignition-start flex-shrink-0" />
-                <span className="text-white/60 font-body text-sm">info@eltanany2.com</span>
+              <div className="flex items-center gap-3 group">
+                <Mail className="w-5 h-5 text-ignition-start flex-shrink-0 group-hover:scale-110 transition-transform duration-200" />
+                <span className="text-white/60 font-body text-sm group-hover:text-white transition-colors duration-200">ahmedowen60@yahoo.com</span>
               </div>
             </div>
 
-            <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10">
+            <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
               <p className="font-body text-sm text-white/80 mb-2">اشترك للحصول على العروض الحصرية</p>
               <div className="flex gap-2">
                 <input
                   type="text"
                   placeholder="رقم الواتساب"
-                  className="flex-1 h-10 px-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/40 font-body text-sm outline-none focus:border-ignition-start transition-colors"
+                  className="flex-1 h-10 px-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/40 font-body text-sm outline-none focus:border-ignition-start focus:ring-2 focus:ring-ignition-start/20 transition-all duration-200"
                 />
-                <button className="h-10 px-4 rounded-lg gradient-brand text-white font-body text-sm font-medium hover:shadow-glow transition-shadow duration-200">
+                <button className="h-10 px-4 rounded-lg gradient-brand text-white font-body text-sm font-medium hover:shadow-glow hover:scale-105 transition-all duration-200">
                   اشترك
                 </button>
               </div>
@@ -106,9 +114,9 @@ export default function Footer() {
           <div className="flex items-center gap-4">
             <span className="text-white/40 font-body text-xs">الدفع عند الاستلام متاح</span>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-5 bg-white/20 rounded" />
-              <div className="w-8 h-5 bg-white/20 rounded" />
-              <div className="w-8 h-5 bg-white/20 rounded" />
+              <div className="w-8 h-5 bg-gradient-to-br from-white/20 to-white/10 rounded flex items-center justify-center text-white/60 text-xs font-bold">VISA</div>
+              <div className="w-8 h-5 bg-gradient-to-br from-white/20 to-white/10 rounded flex items-center justify-center text-white/60 text-xs font-bold">MC</div>
+              <div className="w-8 h-5 bg-gradient-to-br from-white/20 to-white/10 rounded flex items-center justify-center text-white/60 text-xs font-bold">COD</div>
             </div>
           </div>
         </div>

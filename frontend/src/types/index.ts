@@ -14,6 +14,21 @@ size?: number;
 }
 
 // ────────────────────────────────────────────────────────────
+// Product Types (Strict Enums)
+// ────────────────────────────────────────────────────────────
+export type BrandType = 'HP' | 'Dell' | 'Lenovo';
+export type CPUType = 'Intel Core i3' | 'Intel Core i5' | 'Intel Core i7' | 'Intel Core i9' | 'AMD Ryzen';
+export type GPUType = 'Intel' | 'NVIDIA' | 'AMD';
+export type RAMType = 8 | 16 | 32 | 64;
+export type StorageType = 128 | 256 | 512;
+
+export const BRANDS: BrandType[] = ['HP', 'Dell', 'Lenovo'];
+export const CPUS: CPUType[] = ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'Intel Core i9', 'AMD Ryzen'];
+export const GPUS: GPUType[] = ['Intel', 'NVIDIA', 'AMD'];
+export const RAMS: RAMType[] = [8, 16, 32, 64];
+export const STORAGES: StorageType[] = [128, 256, 512];
+
+// ────────────────────────────────────────────────────────────
 // Product
 // ────────────────────────────────────────────────────────────
 export interface Product {
@@ -21,7 +36,7 @@ export interface Product {
   name: string;           // اسم المنتج
   category: 'laptop' | 'accessory';
   subcategory?: string;
-  brand?: string;         // الماركة
+  brand?: BrandType;      // الماركة
   buyingPrice?: number;    // سعر الشراء
   price: number;           // سعر البيع (alias for sellingPrice)
   sellingPrice?: number;   // سعر البيع (legacy)
@@ -29,7 +44,12 @@ export interface Product {
   imageUrl?: string;
   images?: string[];      // for backward compat
   description?: string;
-  specs?: Record<string, string>;
+  specs?: {
+    cpu?: CPUType;
+    gpu?: GPUType;
+    ram?: RAMType;
+    storage?: StorageType;
+  };
   rating?: number;
   reviewCount?: number;
   isBrandNew?: boolean;
