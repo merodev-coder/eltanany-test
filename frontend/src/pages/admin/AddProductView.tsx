@@ -27,7 +27,14 @@ const [loading, setLoading] = useState(false);
 const [message, setMessage] = useState('');
 
 const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+const { name, value } = e.target;
+if (name === 'ram') {
+  setForm((prev) => ({ ...prev, [name]: value ? Number(value) as RAMType : undefined }));
+} else if (name === 'storage') {
+  setForm((prev) => ({ ...prev, [name]: value ? Number(value) as StorageType : undefined }));
+} else {
+  setForm((prev) => ({ ...prev, [name]: value }));
+}
 };
 
 const removeImage = (index: number) => {

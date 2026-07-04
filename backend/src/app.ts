@@ -79,7 +79,7 @@ app.use(
   createRouteHandler({
     router: uploadRouter,
     config: {
-      token: process.env.UPLOADTHING_TOKEN,
+      token: process.env.UPLOADTHING_SECRET,
     },
   })
 );
