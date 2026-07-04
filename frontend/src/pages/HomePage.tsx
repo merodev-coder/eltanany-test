@@ -250,40 +250,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-16 bg-carbon">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="font-heading font-bold text-2xl sm:text-3xl text-white mb-3">اشترك في نشرتنا الإخبارية</h2>
-          <p className="font-body text-white/60 mb-6">وصلك أحدث العروض والمنتجات أول بأول</p>
-          <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <input
-              type="text"
-              value={newsletterContact}
-              onChange={(e) => setNewsletterContact(e.target.value)}
-              placeholder="رقم الواتساب أو الإيميل"
-              className="flex-1 h-12 px-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 font-body outline-none focus:border-ignition-start transition-colors"
-            />
-            <button
-              type="submit"
-              disabled={newsletterSubmitting}
-              className="h-12 px-6 rounded-xl gradient-brand text-white font-heading font-bold hover:shadow-glow transition-shadow duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {newsletterSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  جاري الاشتراك...
-                </>
-              ) : newsletterSuccess ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  تم الاشتراك
-                </>
-              ) : (
-                'اشترك'
-              )}
-            </button>
-          </form>
-        </div>
-      </section>
     </div>
   );
 }

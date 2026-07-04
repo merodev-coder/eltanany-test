@@ -56,7 +56,12 @@
       "Bash(echo \"Exit: $?\")",
       "Bash(npx prod-safe-bundle *)",
       "Bash(node dist/config/env.js)",
-      "Bash(echo \"---EXIT--- $?\")"
+      "Bash(echo \"---EXIT--- $?\")",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|js|jsx|json|html\\)$\")",
+      "Bash(git checkout *)",
+      "Bash(npx prettier *)",
+      "Bash(sed -i 's/ram: undefined as RAMType | undefined,/ram: \"\",/' src/pages/admin/AddProductView.tsx)",
+      "Bash(sed -i 's/storage: undefined as StorageType | undefined,/storage: \"\",/' src/pages/admin/AddProductView.tsx)"
     ]
   }
 }
