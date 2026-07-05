@@ -27,7 +27,8 @@
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--unhandled-rejections=warn nodemon --exec tsx src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "seed": "tsx src/seedProducts.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

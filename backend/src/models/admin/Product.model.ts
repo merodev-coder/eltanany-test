@@ -1,4 +1,4 @@
-import { adminMongoose, adminDb } from '../../config/db.js';
+import { adminMongoose, adminDb } from '../../config/db';
 
 const productSchema = new adminMongoose.Schema({
   name: {

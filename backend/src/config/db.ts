@@ -4,7 +4,7 @@
 
 import dns from 'dns';
 import mongoose from 'mongoose';
-import logger from '../utils/logger.js';
+import logger from '../utils/logger';
 
 // Fix for Windows DNS lookup issues with MongoDB Atlas SRV records
 // Forces IPv4 first to avoid ECONNREFUSED on some networks
