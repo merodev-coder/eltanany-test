@@ -22,10 +22,16 @@ export default async function authenticateUser(
   next: NextFunction
 ): Promise<void> {
   try {
+    // ── Debug: Log cookie presence ───────────────────────
+    console.log('🔍 Auth Debug - Cookies:', Object.keys(req.cookies || {}));
+    console.log('🔍 Auth Debug - user_access:', req.cookies?.user_access ? 'present' : 'missing');
+    console.log('🔍 Auth Debug - user_refresh:', req.cookies?.user_refresh ? 'present' : 'missing');
+
     // ── 1. Extract access token from cookie ──────────────
     const accessToken = req.cookies?.user_access;
 
     if (!accessToken) {
+      console.log('❌ No access token found in cookies');
       throw new AppError('يجب تسجيل الدخول أولاً', 401);
     }
 
