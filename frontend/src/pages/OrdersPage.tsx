@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  ShoppingBag, Package, Truck, Check, X, Clock, AlertCircle,
+  ShoppingBag, Package, Truck, Check, X, Clock,
   MapPin, CreditCard, Receipt, Store,
 } from 'lucide-react';
 import axiosClient from '@/api/apiClient';
@@ -21,7 +21,8 @@ const statusConfig: Record<OrderStatus, { label: string; color: string; icon: ty
   cancelled: { label: 'ملغي', color: 'bg-red-100 text-red-700 border-red-200', icon: X },
 };
 
-function formatCurrency(value: number): string {
+function formatCurrency(value: number | undefined): string {
+  if (value === undefined || value === null) return '0 ج.م';
   return value.toLocaleString('ar-EG') + ' ج.م';
 }
 
