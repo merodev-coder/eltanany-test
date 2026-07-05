@@ -15,8 +15,8 @@ const COOKIE_OPTIONS: {
   path: string;
 } = {
   httpOnly: true,
-  secure: false, // Set to false for development and to test on Render without HTTPS
-  sameSite: 'lax',
+  secure: true, // Required for sameSite: none
+  sameSite: 'none', // Required for cross-origin cookies
   path: '/',
 };
 
