@@ -15,7 +15,7 @@ const COOKIE_OPTIONS: {
   path: string;
 } = {
   httpOnly: true,
-  secure: isProd,
+  secure: false, // Set to false for development and to test on Render without HTTPS
   sameSite: 'lax',
   path: '/',
 };
